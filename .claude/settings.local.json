@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npm run:*)",
+      "Bash(cp -r /Users/vanche/Desktop/dailyTask/daily-task/* /Users/vanche/Desktop/dailyTask/ 2>&1)",
+      "Read(//Users/vanche/.claude/plugins/**)",
+      "Read(//Users/vanche/.claude/**)",
+      "Bash(find ~/.claude -name \"*uiux*\" -o -name \"*ui-ux*\" -o -name \"*ui_ux*\" 2>/dev/null | head -20)",
+      "Bash(cat > /Users/vanche/Desktop/dailyTask/public/tray-icon.png << 'EOF'\n$\\(echo \"iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAGxSURBVFiF7ZY9TsQwEIWfLYiCgjpH4AJwBNp0HCRK7sER6OhpcQQUHNkz+cd2SAFj5iGgWBHyS6/0bI8fG/+Yn8H/+YN/8P8EgPwLAP4HAH4A8P0A+D4A3x+A7wnAtwLgrwLwHQH4ngB8PwC+JwDfE4DvB8D3BOB7AvD9APieAHxPAL4fAN8TgO8JwPcD4HsC8D0B+H4AfE8AvicA3w+A7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AL4nAN8TgO8HwPcE4HsC8P0A+J4AfE8Avh8A3xOA7wnA9wPgewLwPQH4fgB8TwC+JwDfD4DvCcD3BOD7AfA9AfieAHw/AO4C+A8r7vHq8vLxUwAAAABJRU5ErkJggg==\"\\) | base64 -d > /Users/vanche/Desktop/dailyTask/public/tray-icon.png\nEOF\nls -la /Users/vanche/Desktop/dailyTask/public/)",
+      "Bash(open release/)",
+      "Bash(# 复制应用到 Applications 文件夹\ncp -r /Users/vanche/Desktop/dailyTask/release/mac-arm64/DailyTask.app /Applications/DailyTask.app 2>&1 && echo \"安装成功！应用已复制到 /Applications/DailyTask.app\")",
+      "Bash(cp -rf release/mac-arm64/DailyTask.app /Applications/DailyTask.app 2>&1)",
+      "Bash(rm -rf /Applications/DailyTask.app && cp -rf release/mac-arm64/DailyTask.app /Applications/DailyTask.app && echo \"Done\")",
+      "Bash(node -e \"\nconst fs = require\\('fs'\\);\nconst buf = fs.readFileSync\\('./public/tray-icon.png'\\);\nconsole.log\\('File size:', buf.length, 'bytes'\\);\nconsole.log\\('PNG signature ok:', buf.slice\\(0,8\\).toString\\('hex'\\) === '89504e470d0a1a0a'\\);\n\")",
+      "Bash(pkill -f \"DailyTask\" 2>/dev/null; sleep 1; echo \"所有旧进程已关闭\")",
+      "Bash(open /Applications/DailyTask.app && echo \"已启动\")",
+      "Read(//Users/vanche/Desktop/dailyTask/**)",
+      "Bash(defaults read:*)",
+      "Bash(open \"/Applications/DailyTask.app\")",
+      "Bash(find ~/.claude -name \"*.md\" -o -name \"*.txt\" -o -name \"*.js\" 2>/dev/null | grep -i \"uiux\" | head -20)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

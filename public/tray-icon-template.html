@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<canvas id="c" width="32" height="32"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+// Background
+ctx.fillStyle = '#6366f1';
+ctx.beginPath();
+ctx.arc(16, 16, 15, 0, Math.PI * 2);
+ctx.fill();
+// Cat ears
+ctx.fillStyle = '#fff';
+ctx.beginPath();
+ctx.moveTo(10, 12);
+ctx.lineTo(8, 6);
+ctx.lineTo(14, 10);
+ctx.fill();
+ctx.beginPath();
+ctx.moveTo(22, 12);
+ctx.lineTo(24, 6);
+ctx.lineTo(18, 10);
+ctx.fill();
+// Face
+ctx.fillStyle = '#fff';
+ctx.beginPath();
+ctx.arc(16, 18, 10, 0, Math.PI * 2);
+ctx.fill();
+// Eyes
+ctx.fillStyle = '#1f2937';
+ctx.beginPath();
+ctx.arc(12, 16, 2, 0, Math.PI * 2);
+ctx.fill();
+ctx.beginPath();
+ctx.arc(20, 16, 2, 0, Math.PI * 2);
+ctx.fill();
+// Save
+const link = document.createElement('a');
+link.download = 'tray-icon.png';
+link.href = c.toDataURL('image/png');
+link.click();
+</script>
+</body>
+</html>
