@@ -642,13 +642,11 @@ body.mac .header { top: 28px; }
 }
 
 /* ── Scrollbar ── */
-.task-list,
-.history-list {
-  scrollbar-width: none;
-}
-.task-list::-webkit-scrollbar,
-.history-list::-webkit-scrollbar {
+::-webkit-scrollbar {
   display: none;
+}
+* {
+  scrollbar-width: none;
 }
 
 /* ── History page ── */
