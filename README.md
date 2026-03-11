@@ -1,162 +1,53 @@
-# DailyTask - Mac 桌面待办事项应用
+# DailyTask
 
-一个可爱的 Mac 桌面待办事项应用，带有像素小猫陪伴你完成每一项任务！
+一个可爱的 Mac 桌面待办事项应用，带有像素小猫陪伴你完成每一项任务。
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![Platform](https://img.shields.io/badge/platform-macOS%20ARM64-silver.svg)
-
-## 功能特性
-
-### 核心功能
-- ✅ 添加、删除、完成任务
-- 📅 任务日期管理（支持设置今天、明天或未来 7 天内日期）
-- 📝 任务持久化存储（localStorage）
-- 🔍 筛选功能（全部/今天/进行中/已完成）
-- 🌙 深色/浅色模式切换
-- 📊 任务统计显示
-
-### 像素小猫系统 🐱
-- 🎮 **成长系统**：完成任务获得经验值，小猫会升级长大
-- 🎨 **5 个成长阶段**：
-  - 🐣 **Baby**（灰色）- 初始形态
-  - 🐱 **Small**（黄色）- Lv.2 解锁
-  - 🐯 **Medium**（蓝色）- Lv.4 解锁
-  - 🐅 **Large**（绿色）- Lv.7 解锁
-  - 👑 **Mega**（紫色，带皇冠）- Lv.10 解锁
-- 🎉 **状态反馈**：小猫会根据任务状态显示不同表情和动作
-- 🔊 **音效反馈**：完成任务时播放欢快的音效
-
-### 系统功能
-- 🍎 **菜单栏支持**：系统托盘显示，双击打开/隐藏窗口
-- 🎬 **自定义应用菜单**：完整的 Mac 应用菜单支持
-- ✨ **彩带特效**：完成任务时的庆祝动画
-
-## 技术栈
-
-- **Electron 41** - 桌面应用框架
-- **React 19** - UI 框架
-- **TypeScript** - 类型安全
-- **Vite** - 构建工具
-- **localStorage** - 数据存储
-
-## 开发
-
-### 安装依赖
-
-```bash
-npm install
-```
-
-### 启动开发模式
-
-```bash
-npm run dev
-```
-
-### 构建应用
-
-```bash
-npm run electron:build
-```
-
-构建后的应用会在 `release/` 目录下。
-
-## 安装已构建的应用
-
-1. 打开 `release/DailyTask-1.0.0-arm64.dmg` 文件
-2. 将 DailyTask 应用拖拽到 Applications 文件夹
-3. 在 Launchpad 或 Applications 中打开应用
-
-> **注意**: 由于应用未签名，首次打开时可能会显示"无法打开"警告。解决方法：
-> - 右键点击应用，选择"打开"
-> - 或在系统设置 > 隐私与安全性 中允许打开
-
-## 项目结构
-
-```
-daily-task/
-├── electron/
-│   ├── main.ts          # Electron 主进程（菜单、托盘）
-│   └── preload.ts       # Preload 脚本
-├── src/
-│   ├── components/
-│   │   └── PixelCat.tsx # 像素小猫组件（成长系统）
-│   ├── hooks/
-│   │   └── useSound.ts  # 音效钩子
-│   ├── App.tsx          # 主应用组件
-│   ├── App.css          # 应用样式
-│   ├── storage.ts       # localStorage 工具
-│   ├── types.ts         # TypeScript 类型定义
-│   └── main.tsx         # React 入口
-├── public/
-│   └── cat-icon.svg     # 应用图标
-└── package.json
-```
-
-## 使用说明
-
-### 添加任务
-1. 在输入框中输入任务内容
-2. 选择任务日期（今天/明天/无日期 或使用日期选择器）
-3. 按 Enter 键添加
-
-### 管理任务
-- **完成任务**: 点击任务前的复选框（会播放音效和彩带）
-- **删除任务**: 鼠标悬停在任务上，点击右侧的 ✕ 按钮
-- **筛选任务**: 点击全部/今天/进行中/已完成按钮
-
-### 小猫成长
-- 每完成 1 个任务获得 1 点经验值
-- 升级所需经验值：5 → 8 → 12 → 18 → 27...
-- 达到特定等级自动进化（Lv.2/4/7/10）
-- 高等级小猫有特殊外观（眼睛闪光、皇冠等）
-
-### 系统功能
-- **菜单栏**: 点击菜单栏小猫图标可快速打开应用
-- **深色模式**: 点击右上角 🌙/☀️ 切换主题
-- **窗口控制**: 支持 Mac 标准的最小化、关闭操作
-
-## 快捷键
-
-| 快捷键 | 功能 |
-|--------|------|
-| Enter | 添加任务 |
-| Cmd + W | 关闭窗口 |
-| Cmd + Q | 退出应用 |
-
-## 注意事项
-
-- 应用目前仅支持 Mac ARM64 系统（M1/M2/M3 芯片）
-- 数据存储在本地 localStorage，清除应用数据会导致任务丢失
-- 首次启动可能需要一些时间加载 Electron
+![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-silver.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 截图
 
-### 浅色模式
-- 小猫会根据任务状态改变颜色
-- 完成所有任务时小猫会庆祝
+<p align="center">
+  <img src="docs/screenshots/main-dark.png" width="320" alt="主界面（暗色）" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/detail.png" width="320" alt="任务详情（亮色）" />
+</p>
 
-### 深色模式
-- 自动适配系统深色模式
-- 保护眼睛，适合夜间使用
+## 功能
 
-## 更新日志
+- **AI 自动生成任务内容** — 输入标题后自动展开执行步骤，无需手动填写
+- **AI 时间估算** — 自动估算每个任务耗时，汇总今日工作量
+- **工作量看板** — 实时显示今日负载，超过 8h 高亮预警
+- **像素小猫** — 完成任务获得经验，小猫随之成长升级
+- **历史记录** — 点击小猫查看历史完成记录（按日期分组）
+- **深色 / 浅色模式** — 一键切换，自动跟随偏好
+- **AI 润色** — 对任务内容进行结构化润色优化
 
-### v1.0.0
-- ✨ 新增任务日期功能
-- ✨ 新增像素小猫成长系统
-- ✨ 新增 macOS 菜单栏/托盘支持
-- 🎨 优化布局，避开 macOS 窗口按钮
-- 🔊 新增完成任务音效
+## 下载
+
+前往 [Releases](https://github.com/fq393/dailytask/releases) 下载最新版本：
+
+| 平台 | 文件 |
+|------|------|
+| macOS (Apple Silicon) | `DailyTask-x.x.x-arm64.dmg` |
+| Windows | `DailyTask-Setup-x.x.x.exe` |
+
+> **macOS 注意**：应用未签名，首次打开需右键 → 打开，或在「系统设置 → 隐私与安全性」中允许。
+
+## 开发
+
+```bash
+npm install
+npm run dev          # 开发模式
+npm run electron:build  # 本地构建
+npm run release      # 版本发布（bump + push tag，触发 CI 自动构建）
+```
+
+## 技术栈
+
+Electron 41 · React 19 · TypeScript · Vite
 
 ## License
 
 MIT
-
-## 作者
-
-DailyTask Team
-
----
-
-Made with ❤️ and 🐱 for macOS
