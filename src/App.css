@@ -421,6 +421,18 @@ body.mac .header { top: 28px; }
   display: block;
   word-break: break-word;
 }
+.title-inline-input {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--surface);
+  padding: 2px 6px;
+  outline: none;
+  -webkit-app-region: no-drag;
+}
 .task-date-tag {
   display: inline-flex;
   align-items: center;
@@ -772,6 +784,37 @@ body.mac .header { top: 28px; }
 }
 .history-task:last-child { border-bottom: none; }
 .history-task:hover { background: var(--surface2); }
+.history-task:hover .history-delete-btn { opacity: 1; }
+
+.history-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text2);
+  opacity: 0;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity var(--transition), color var(--transition), background var(--transition);
+  -webkit-app-region: no-drag;
+}
+.history-delete-btn:hover { color: var(--danger); background: var(--surface2); }
+
+.history-export-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text2);
+  min-width: 36px; min-height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background var(--transition);
+  -webkit-app-region: no-drag;
+}
+.history-export-btn:hover { color: var(--accent); background: var(--surface2); }
 
 .history-check {
   width: 18px; height: 18px;

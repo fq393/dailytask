@@ -179,6 +179,14 @@ const ListIcon = () => (
   </svg>
 )
 
+const DownloadIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+)
+
 // ── App ───────────────────────────────────────────────────────────────
 function App() {
   const [tasks, setTasks] = useState<Task[]>(() => loadTasks())
@@ -208,6 +216,8 @@ function App() {
   const [showApiKey, setShowApiKey] = useState(false)
   const [editingEstimateId, setEditingEstimateId] = useState<string | null>(null)
   const [estimateDraftValue, setEstimateDraftValue] = useState('')
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null)
+  const [titleDraftValue, setTitleDraftValue] = useState('')
 
   // Render trigger for progress bar refresh every 30s
   // Prefixed with _ to satisfy noUnusedLocals (value is intentionally unused — only the setter matters)
@@ -488,6 +498,27 @@ function App() {
       }, {} as Record<string, Task[]>)
     const sortedDates = Object.keys(tasksByDate).sort().reverse()
 
+    const exportHistory = () => {
+      const historyTasks = tasks
+        .filter(t => t.dueDate && t.dueDate < todayStr)
+        .sort((a, b) => (b.dueDate ?? '').localeCompare(a.dueDate ?? ''))
+      const header = '日期,任务,状态,预计时间(分),实际时间(分)\n'
+      const rows = historyTasks.map(t => [
+        t.dueDate ?? '',
+        `"${t.text.replace(/"/g, '""')}"`,
+        t.completed ? '完成' : '未完成',
+        t.estimatedMinutes ?? '',
+        t.actualMinutes ?? ''
+      ].join(',')).join('\n')
+      const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `dailytask-${todayStr}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+
     return (
       <div className={`app ${darkMode ? 'dark' : ''}`}>
         <div className="titlebar" />
@@ -498,6 +529,9 @@ function App() {
             </button>
             <span className="header-title">历史记录</span>
             <div style={{ flex: 1 }} />
+            <button className="history-export-btn" onClick={exportHistory} aria-label="导出 CSV" title="导出 CSV">
+              <DownloadIcon />
+            </button>
             <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label={darkMode ? '切换浅色模式' : '切换深色模式'}>
               {darkMode ? <SunIcon /> : <MoonIcon />}
             </button>
@@ -533,6 +567,13 @@ function App() {
                       {(task.actualMinutes != null || task.estimatedMinutes != null) && (
                         <span className="history-time">{formatMins(task.actualMinutes ?? task.estimatedMinutes!)}</span>
                       )}
+                      <button
+                        className="history-delete-btn"
+                        onClick={() => deleteTask(task.id)}
+                        aria-label="删除任务"
+                      >
+                        <XIcon />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -653,7 +694,36 @@ function App() {
                     aria-expanded={isExpanded}
                   >
                     <div className="task-title-row">
-                      <span className="task-title">{task.text}</span>
+                      {editingTitleId === task.id ? (
+                        <input
+                          className="title-inline-input"
+                          value={titleDraftValue}
+                          autoFocus
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => setTitleDraftValue(e.target.value)}
+                          onBlur={() => {
+                            const trimmed = titleDraftValue.trim()
+                            if (trimmed) setTasks(prev => prev.map(t => t.id === task.id ? { ...t, text: trimmed } : t))
+                            setEditingTitleId(null)
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                            if (e.key === 'Escape') setEditingTitleId(null)
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className="task-title"
+                          onDoubleClick={e => {
+                            e.stopPropagation()
+                            setEditingTitleId(task.id)
+                            setTitleDraftValue(task.text)
+                          }}
+                          title="双击编辑标题"
+                        >
+                          {task.text}
+                        </span>
+                      )}
                       <div className="task-time-info" onClick={e => e.stopPropagation()}>
                         {estimatingIds.has(task.id) ? (
                           <span className="estimating">估算中…</span>
