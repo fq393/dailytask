@@ -17,12 +17,13 @@ function getDataPath() {
   return {
     tasks: path.join(dir, 'tasks.json'),
     cat: path.join(dir, 'cat-progress.json'),
+    'llm-config': path.join(dir, 'llm-config.json'),
   }
 }
 
 ipcMain.handle('storage:load', (_e, key: string) => {
   try {
-    const file = getDataPath()[key as 'tasks' | 'cat']
+    const file = getDataPath()[key as 'tasks' | 'cat' | 'llm-config']
     if (file && fs.existsSync(file)) return fs.readFileSync(file, 'utf-8')
   } catch {}
   return null
@@ -30,7 +31,7 @@ ipcMain.handle('storage:load', (_e, key: string) => {
 
 ipcMain.handle('storage:save', (_e, key: string, data: string) => {
   try {
-    const file = getDataPath()[key as 'tasks' | 'cat']
+    const file = getDataPath()[key as 'tasks' | 'cat' | 'llm-config']
     if (file) fs.writeFileSync(file, data, 'utf-8')
     return true
   } catch { return false }
