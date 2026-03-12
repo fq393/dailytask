@@ -795,6 +795,36 @@ body.mac .header { top: 28px; }
   .task-progress-over { transition: none; }
 }
 
+/* ── Estimate Row ── */
+.estimate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.estimate-label {
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+}
+.estimate-input {
+  width: 64px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+.estimate-input:focus { border-color: var(--accent); }
+.estimate-unit {
+  font-size: 12px;
+  color: var(--text2);
+}
+
 /* ── Settings Drawer ── */
 .drawer-backdrop {
   position: fixed;

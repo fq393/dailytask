@@ -689,6 +689,27 @@ function App() {
                         autoFocus
                         disabled={isGenerating}
                       />
+                      <div className="estimate-row">
+                        <span className="estimate-label">预计时间</span>
+                        <input
+                          className="estimate-input"
+                          type="number"
+                          min="1"
+                          max="480"
+                          value={task.estimatedMinutes ?? ''}
+                          placeholder="分钟"
+                          onChange={e => {
+                            const val = parseInt(e.target.value, 10)
+                            setTasks(prev => prev.map(t =>
+                              t.id === task.id
+                                ? { ...t, estimatedMinutes: (!isNaN(val) && val > 0) ? val : undefined }
+                                : t
+                            ))
+                          }}
+                          aria-label="预计完成时间（分钟）"
+                        />
+                        <span className="estimate-unit">分钟</span>
+                      </div>
                       <div className="content-toolbar">
                         <span className="content-hint">失焦自动保存</span>
                         <button
