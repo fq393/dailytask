@@ -177,11 +177,12 @@ body.mac .header { top: 28px; }
 }
 
 .header-actions {
+  position: absolute;
+  right: 16px;
   display: flex;
   align-items: center;
   gap: 4px;
   -webkit-app-region: no-drag;
-  flex-shrink: 0;
 }
 
 .settings-btn {
