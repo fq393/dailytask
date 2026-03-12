@@ -144,13 +144,17 @@ body.mac .header { top: 28px; }
 .cat-btn:active { transform: scale(0.97); }
 .cat-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* Header date */
+/* Header date — absolutely centered so cat bubble doesn't shift it */
 .header-date {
-  flex: 1;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1px;
+  pointer-events: none;
+  white-space: nowrap;
 }
 .header-date-main {
   font-size: 15px;
@@ -176,6 +180,8 @@ body.mac .header { top: 28px; }
   display: flex;
   align-items: center;
   gap: 4px;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
 }
 
 .settings-btn {
