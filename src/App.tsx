@@ -206,6 +206,8 @@ function App() {
   const [settingsDraft, setSettingsDraft] = useState<LLMConfig>({ ...DEFAULT_LLM_CONFIG })
   const [settingsSaved, setSettingsSaved] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
+  const [editingEstimateId, setEditingEstimateId] = useState<string | null>(null)
+  const [estimateDraftValue, setEstimateDraftValue] = useState('')
 
   // Render trigger for progress bar refresh every 30s
   // Prefixed with _ to satisfy noUnusedLocals (value is intentionally unused — only the setter matters)
@@ -652,24 +654,58 @@ function App() {
                   >
                     <div className="task-title-row">
                       <span className="task-title">{task.text}</span>
-                      <span className="task-time-tag">
+                      <div className="task-time-info" onClick={e => e.stopPropagation()}>
                         {estimatingIds.has(task.id) ? (
                           <span className="estimating">估算中…</span>
-                        ) : (() => {
+                        ) : editingEstimateId === task.id ? (
+                          <input
+                            className="estimate-inline-input"
+                            type="number"
+                            min="1"
+                            max="480"
+                            autoFocus
+                            value={estimateDraftValue}
+                            onChange={e => setEstimateDraftValue(e.target.value)}
+                            onBlur={() => {
+                              const val = parseInt(estimateDraftValue, 10)
+                              setTasks(prev => prev.map(t =>
+                                t.id === task.id
+                                  ? { ...t, estimatedMinutes: (!isNaN(val) && val > 0) ? val : t.estimatedMinutes }
+                                  : t
+                              ))
+                              setEditingEstimateId(null)
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                              if (e.key === 'Escape') setEditingEstimateId(null)
+                            }}
+                          />
+                        ) : (
+                          <span
+                            className="estimate-badge"
+                            onDoubleClick={e => {
+                              e.stopPropagation()
+                              setEditingEstimateId(task.id)
+                              setEstimateDraftValue(task.estimatedMinutes != null ? String(task.estimatedMinutes) : '')
+                            }}
+                            title="双击编辑预计时间"
+                          >
+                            预计 {task.estimatedMinutes ? formatMins(task.estimatedMinutes) : '--'}
+                          </span>
+                        )}
+                        {(() => {
                           const elapsed = getElapsedMins(task)
-                          if (elapsed != null && task.estimatedMinutes) {
-                            if (task.completed) {
-                              return <span className="time-badge time-badge--done"><ClockIcon /> {formatMins(elapsed)} 实际</span>
-                            }
-                            return <span className={`time-badge ${elapsed > task.estimatedMinutes ? 'time-badge--over' : ''}`}>
-                              <ClockIcon /> {formatMins(elapsed)}
-                            </span>
+                          if (elapsed == null) return null
+                          if (task.completed) {
+                            return <span className="elapsed-badge elapsed-badge--done">✓ {formatMins(elapsed)}</span>
                           }
-                          return task.estimatedMinutes
-                            ? <span className="time-badge"><ClockIcon /> {formatMins(task.estimatedMinutes)}</span>
-                            : null
+                          return (
+                            <span className={`elapsed-badge${task.estimatedMinutes && elapsed > task.estimatedMinutes ? ' elapsed-badge--over' : ''}`}>
+                              ⏱ {formatMins(elapsed)}
+                            </span>
+                          )
                         })()}
-                      </span>
+                      </div>
                     </div>
                     {task.dueDate && (
                       <span className={`task-date-tag ${task.dueDate < today ? 'overdue' : ''}`}>
@@ -702,27 +738,6 @@ function App() {
                         autoFocus
                         disabled={isGenerating}
                       />
-                      <div className="estimate-row">
-                        <span className="estimate-label">预计时间</span>
-                        <input
-                          className="estimate-input"
-                          type="number"
-                          min="1"
-                          max="480"
-                          value={task.estimatedMinutes ?? ''}
-                          placeholder="分钟"
-                          onChange={e => {
-                            const val = parseInt(e.target.value, 10)
-                            setTasks(prev => prev.map(t =>
-                              t.id === task.id
-                                ? { ...t, estimatedMinutes: (!isNaN(val) && val > 0) ? val : undefined }
-                                : t
-                            ))
-                          }}
-                          aria-label="预计完成时间（分钟）"
-                        />
-                        <span className="estimate-unit">分钟</span>
-                      </div>
                       <div className="content-toolbar">
                         <span className="content-hint">失焦自动保存</span>
                         <button

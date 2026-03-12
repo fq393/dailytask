@@ -453,13 +453,46 @@ body.mac .header { top: 28px; }
   gap: 6px;
   flex-wrap: wrap;
 }
-.task-time-tag { font-size: 11px; color: var(--text2); white-space: nowrap; flex-shrink: 0; }
-.time-badge {
-  display: inline-flex;
+.task-time-info {
+  display: flex;
   align-items: center;
-  gap: 3px;
-  opacity: 0.8;
+  gap: 6px;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
 }
+.estimate-badge {
+  font-size: 11px;
+  color: var(--text2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  white-space: nowrap;
+  cursor: default;
+  transition: border-color var(--transition), color var(--transition);
+  user-select: none;
+}
+.estimate-badge:hover { border-color: var(--accent); color: var(--accent); }
+.estimate-inline-input {
+  width: 52px;
+  font-size: 11px;
+  padding: 2px 4px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.elapsed-badge {
+  font-size: 11px;
+  color: var(--text2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.elapsed-badge--done { color: #10b981; }
+.elapsed-badge--over { color: var(--danger); }
 .estimating { font-size: 11px; color: var(--accent); opacity: 0.75; animation: blink 1.2s ease-in-out infinite; }
 @keyframes blink { 0%,100% { opacity: 0.75; } 50% { opacity: 0.35; } }
 
@@ -814,43 +847,9 @@ body.mac .header { top: 28px; }
 }
 .task-progress-track--done .task-progress-over { display: none; }
 
-/* Time badge variants */
-.time-badge--over { color: var(--danger); }
-.time-badge--done { color: var(--text2); }
-
 @media (prefers-reduced-motion: reduce) {
   .task-progress-fill,
   .task-progress-over { transition: none; }
-}
-
-/* ── Estimate Row ── */
-.estimate-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.estimate-label {
-  font-size: 12px;
-  color: var(--text2);
-  white-space: nowrap;
-}
-.estimate-input {
-  width: 64px;
-  padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 13px;
-  text-align: center;
-  outline: none;
-  font-variant-numeric: tabular-nums;
-}
-.estimate-input:focus { border-color: var(--accent); }
-.estimate-unit {
-  font-size: 12px;
-  color: var(--text2);
 }
 
 /* ── Settings Drawer ── */
