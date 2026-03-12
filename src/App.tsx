@@ -183,6 +183,10 @@ function App() {
   const [page, setPage] = useState<'tasks' | 'history'>('tasks')
   const { playSound } = useSound()
 
+  // Render trigger for progress bar refresh every 30s
+  // Prefixed with _ to satisfy noUnusedLocals (value is intentionally unused — only the setter matters)
+  const [_progressTick, setProgressTick] = useState(0)
+
   useEffect(() => {
     loadTasksAsync().then(t => { if (t.length > 0) setTasks(t) })
     loadCatAsync().then(c => { if (c) setCatProgress(c) })
@@ -202,6 +206,12 @@ function App() {
         setActiveLLMConfig(cfg)
       }
     })
+  }, [])
+
+  // Progress bar refresh — triggers re-render every 30 seconds to update elapsed time displays
+  useEffect(() => {
+    const timer = setInterval(() => setProgressTick(n => n + 1), 30_000)
+    return () => clearInterval(timer)
   }, [])
 
   const isComposing = useRef(false)
@@ -255,11 +265,25 @@ function App() {
 
   const getDailyLoad = () => {
     const todayStr = new Date().toISOString().split('T')[0]
+    const nowMs = Date.now()
     const todayTasks = tasks.filter(t =>
-      !t.completed && (t.dueDate === todayStr || (!t.dueDate && new Date(t.createdAt).toISOString().split('T')[0] === todayStr))
+      t.dueDate === todayStr || (!t.dueDate && new Date(t.createdAt).toISOString().split('T')[0] === todayStr)
     )
-    const totalMins = todayTasks.reduce((sum, t) => sum + (t.estimatedMinutes ?? 0), 0)
-    const estimatedCount = todayTasks.filter(t => t.estimatedMinutes != null).length
+    const totalMins = todayTasks.reduce((sum, t) => {
+      if (t.completed) {
+        // Use actual time if available, skip otherwise
+        return sum + (t.actualMinutes ?? 0)
+      }
+      if (t.startedAt) {
+        // Active task: use real elapsed time
+        return sum + (nowMs - t.startedAt) / 60000
+      }
+      // No timer: fall back to estimate (skip if undefined)
+      return sum + (t.estimatedMinutes ?? 0)
+    }, 0)
+    const estimatedCount = todayTasks.filter(t =>
+      t.actualMinutes != null || t.startedAt != null || t.estimatedMinutes != null
+    ).length
     const ratio = totalMins / WORK_MINUTES_PER_DAY
     return { totalMins, estimatedCount, ratio, taskCount: todayTasks.length }
   }
