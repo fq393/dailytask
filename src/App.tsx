@@ -474,15 +474,17 @@ function App() {
 
   // ── History page ──────────────────────────────────────────────────
   if (page === 'history') {
-    const completedByDate = tasks
-      .filter(t => t.completed && t.dueDate)
+    const todayStr = new Date().toISOString().split('T')[0]
+    // All tasks from before today (completed + incomplete), grouped by dueDate
+    const tasksByDate = tasks
+      .filter(t => t.dueDate && t.dueDate < todayStr)
       .reduce((acc, task) => {
         const d = task.dueDate!
         if (!acc[d]) acc[d] = []
         acc[d].push(task)
         return acc
       }, {} as Record<string, Task[]>)
-    const sortedDates = Object.keys(completedByDate).sort().reverse()
+    const sortedDates = Object.keys(tasksByDate).sort().reverse()
 
     return (
       <div className={`app ${darkMode ? 'dark' : ''}`}>
@@ -492,7 +494,7 @@ function App() {
             <button className="back-btn" onClick={() => setPage('tasks')} aria-label="返回">
               <ArrowLeftIcon />
             </button>
-            <span className="header-title">历史完成</span>
+            <span className="header-title">历史记录</span>
             <div style={{ flex: 1 }} />
             <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label={darkMode ? '切换浅色模式' : '切换深色模式'}>
               {darkMode ? <SunIcon /> : <MoonIcon />}
@@ -503,26 +505,37 @@ function App() {
           {sortedDates.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon"><ListIcon /></div>
-              <p>还没有完成过任务</p>
+              <p>还没有历史任务</p>
             </div>
           ) : (
-            sortedDates.map(date => (
-              <div key={date} className="history-day">
-                <div className="history-day-header">
-                  <span className="history-day-label">{formatDate(date) || date}</span>
-                  <span className="history-day-count">{completedByDate[date].length} 个完成</span>
-                </div>
-                {completedByDate[date].map(task => (
-                  <div key={task.id} className="history-task">
-                    <span className="history-check"><CheckIcon /></span>
-                    <span className="history-task-text">{task.text}</span>
-                    {task.estimatedMinutes && (
-                      <span className="history-time">{formatMins(task.estimatedMinutes)}</span>
-                    )}
+            sortedDates.map(date => {
+              const dayTasks = tasksByDate[date]
+              const doneCount = dayTasks.filter(t => t.completed).length
+              const todoCount = dayTasks.filter(t => !t.completed).length
+              return (
+                <div key={date} className="history-day">
+                  <div className="history-day-header">
+                    <span className="history-day-label">{formatDate(date) || date}</span>
+                    <span className="history-day-count">
+                      {doneCount > 0 && `${doneCount} 完成`}
+                      {doneCount > 0 && todoCount > 0 && ' / '}
+                      {todoCount > 0 && <span className="history-count-todo">{todoCount} 未完成</span>}
+                    </span>
                   </div>
-                ))}
-              </div>
-            ))
+                  {dayTasks.map(task => (
+                    <div key={task.id} className={`history-task ${task.completed ? '' : 'history-task--todo'}`}>
+                      <span className="history-check">
+                        {task.completed ? <CheckIcon /> : <span className="history-todo-dot" />}
+                      </span>
+                      <span className={`history-task-text ${task.completed ? 'history-task-text--done' : ''}`}>{task.text}</span>
+                      {(task.actualMinutes != null || task.estimatedMinutes != null) && (
+                        <span className="history-time">{formatMins(task.actualMinutes ?? task.estimatedMinutes!)}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })
           )}
         </div>
       </div>

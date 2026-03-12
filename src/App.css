@@ -756,6 +756,27 @@ body.mac .header { top: 28px; }
   border-radius: 4px;
 }
 
+/* ── History incomplete tasks ── */
+.history-task--todo {
+  opacity: 0.75;
+}
+
+.history-task-text--done {
+  text-decoration: line-through;
+  color: var(--text2);
+}
+
+.history-todo-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 2px solid var(--text2);
+  border-radius: 50%;
+}
+
+.history-count-todo {
+  color: var(--warning-text);
+}
+
 /* ── Task Timer Progress Bar ── */
 .task-progress-track {
   position: relative;
