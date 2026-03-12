@@ -1,7 +1,7 @@
 {
   "name": "daily-task",
   "private": true,
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "A cute Mac desktop todo application with pixel cat companion",
   "author": "DailyTask Team",
   "type": "module",
