@@ -466,7 +466,7 @@ function App() {
   }
 
   const formatMins = (mins: number) =>
-    mins >= 60 ? `${Math.round(mins / 60 * 10) / 10}h` : `${mins}分`
+    mins >= 60 ? `${Math.round(mins / 60 * 10) / 10}h` : `${Math.floor(mins)}分`
 
   const getElapsedMins = (task: Task): number | null => {
     if (!task.startedAt) return null
