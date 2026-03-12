@@ -286,9 +286,18 @@ function App() {
           }
           return { level: newLevel, exp: newExp, expToNextLevel: newExpToNextLevel, size: newSize }
         })
-        return { ...task, completed: newCompleted, rewarded: true }
+        const completedAt = Date.now()
+        const actualMinutes = task.startedAt
+          ? Math.round((completedAt - task.startedAt) / 60000)
+          : undefined
+        return { ...task, completed: newCompleted, rewarded: true, completedAt, actualMinutes }
       }
-      return { ...task, completed: newCompleted }
+      return {
+        ...task,
+        completed: newCompleted,
+        completedAt: newCompleted ? Date.now() : undefined,
+        actualMinutes: newCompleted ? task.actualMinutes : undefined,
+      }
     }))
   }
 
