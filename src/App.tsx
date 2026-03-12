@@ -204,16 +204,20 @@ function App() {
     })
   }, [])
 
+  const isComposing = useRef(false)
+
   const addTask = () => {
     if (!inputValue.trim()) return
+    const nowMs = Date.now()
     const t: Task = {
-      id: Date.now().toString(),
+      id: nowMs.toString(),
       text: inputValue.trim(),
       content: '',
       completed: false,
       rewarded: false,
       dueDate: today,
-      createdAt: Date.now(),
+      createdAt: nowMs,
+      startedAt: nowMs,   // auto-timer: creation = start of work
     }
     setTasks(prev => [t, ...prev])
     setInputValue('')
@@ -470,7 +474,9 @@ function App() {
             placeholder="添加任务…"
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addTask()}
+            onCompositionStart={() => { isComposing.current = true }}
+            onCompositionEnd={() => { isComposing.current = false }}
+            onKeyDown={e => { if (e.key === 'Enter' && !isComposing.current) addTask() }}
             aria-label="输入新任务"
           />
           <button
