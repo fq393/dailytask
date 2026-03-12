@@ -8,6 +8,10 @@ export interface Task {
   dueDate: string | null
   estimatedMinutes?: number // AI estimated duration
   createdAt: number
+  // --- new fields ---
+  startedAt?: number        // Unix ms — set at creation (auto-timer start = creation time)
+  completedAt?: number      // Unix ms — set when task is marked complete
+  actualMinutes?: number    // Math.round((completedAt - startedAt) / 60000); undefined if startedAt absent
 }
 
 export type FilterType = 'all' | 'active' | 'completed' | 'today' | 'overdue'
@@ -19,6 +23,13 @@ export interface CatProgress {
   exp: number
   expToNextLevel: number
   size: CatSize
+}
+
+// --- new ---
+export interface LLMConfig {
+  baseURL: string   // e.g. "http://10.26.236.214/v1"
+  apiKey: string
+  model: string
 }
 
 export const STORAGE_KEY = 'dailytask-todos'
