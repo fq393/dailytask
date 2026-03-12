@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react'
-import type { Task, FilterType, CatProgress, CatSize } from './types'
-import { loadTasks, loadTasksAsync, saveTasks, loadCat, loadCatAsync, saveCat } from './storage'
+import { useState, useEffect, useRef } from 'react'
+import type { Task, FilterType, CatProgress, CatSize, LLMConfig } from './types'
+import { loadTasks, loadTasksAsync, saveTasks, loadCat, loadCatAsync, saveCat, loadLLMConfig, saveLLMConfig } from './storage'
 import { useSound } from './hooks/useSound'
 import PixelCat from './components/PixelCat'
 import './App.css'
 
 // ── LLM ──────────────────────────────────────────────────────────────
-const LLM_API = 'http://10.26.236.214/v1/chat/completions'
-const LLM_KEY = 'gpustack_fc146ee01da0ab5d_56093b1a3a30a431af7d4d799a44b99a'
-const LLM_MODEL = 'qwen3-235b-a22b-instruct-2507-fp8'
+const DEFAULT_LLM_CONFIG: LLMConfig = {
+  baseURL: 'http://10.26.236.214/v1',
+  apiKey: 'gpustack_fc146ee01da0ab5d_56093b1a3a30a431af7d4d799a44b99a',
+  model: 'qwen3-235b-a22b-instruct-2507-fp8',
+}
+
+// Mutable runtime config — updated when user saves settings
+let _llmConfig: LLMConfig = { ...DEFAULT_LLM_CONFIG }
+export function setActiveLLMConfig(cfg: LLMConfig) { _llmConfig = cfg }
 
 const WORK_MINUTES_PER_DAY = 480
 
@@ -48,11 +54,12 @@ const SYSTEM_GENERATE = `你是任务规划助手。根据任务标题，生成�
 - 直接输出内容，不加前缀说明`
 
 async function llmCall(systemPrompt: string, userText: string, maxTokens = 512): Promise<string> {
-  const res = await fetch(LLM_API, {
+  const cfg = _llmConfig
+  const res = await fetch(`${cfg.baseURL}/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LLM_KEY}` },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
     body: JSON.stringify({
-      model: LLM_MODEL, seed: null, stop: null,
+      model: cfg.model, seed: null, stop: null,
       temperature: 0.7, top_p: 1, max_tokens: maxTokens,
       frequency_penalty: 0, presence_penalty: 0,
       messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userText }],
@@ -187,6 +194,15 @@ function App() {
     localStorage.setItem('dailytask-darkmode', JSON.stringify(darkMode))
     document.documentElement.classList.toggle('dark', darkMode)
   }, [darkMode])
+
+  // Load LLM config from file on mount
+  useEffect(() => {
+    loadLLMConfig().then(cfg => {
+      if (cfg) {
+        setActiveLLMConfig(cfg)
+      }
+    })
+  }, [])
 
   const addTask = () => {
     if (!inputValue.trim()) return
