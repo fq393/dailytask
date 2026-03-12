@@ -202,6 +202,10 @@ function App() {
   const { playSound } = useSound()
   const [now, setNow] = useState(new Date())
   const [showSettings, setShowSettings] = useState(false)
+  const [llmConfig, setLLMConfig] = useState<LLMConfig>({ ...DEFAULT_LLM_CONFIG })
+  const [settingsDraft, setSettingsDraft] = useState<LLMConfig>({ ...DEFAULT_LLM_CONFIG })
+  const [settingsSaved, setSettingsSaved] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   // Render trigger for progress bar refresh every 30s
   // Prefixed with _ to satisfy noUnusedLocals (value is intentionally unused — only the setter matters)
@@ -223,10 +227,17 @@ function App() {
   useEffect(() => {
     loadLLMConfig().then(cfg => {
       if (cfg) {
+        setLLMConfig(cfg)
+        setSettingsDraft(cfg)
         setActiveLLMConfig(cfg)
       }
     })
   }, [])
+
+  // Keep module-level _llmConfig in sync with state
+  useEffect(() => {
+    setActiveLLMConfig(llmConfig)
+  }, [llmConfig])
 
   // Progress bar refresh — triggers re-render every 30 seconds to update elapsed time displays
   useEffect(() => {
@@ -373,6 +384,13 @@ function App() {
     } finally {
       setPolishingId(null)
     }
+  }
+
+  const handleSaveSettings = () => {
+    setLLMConfig({ ...settingsDraft })
+    saveLLMConfig(settingsDraft)
+    setSettingsSaved(true)
+    setTimeout(() => setSettingsSaved(false), 1500)
   }
 
   const toggleExpand = (id: string) => {
@@ -522,7 +540,7 @@ function App() {
             <span className="header-clock">{clockStr}</span>
           </div>
           <div className="header-actions">
-            <button className="settings-btn" onClick={() => setShowSettings(true)} aria-label="打开设置">
+            <button className="settings-btn" onClick={() => { setSettingsDraft({ ...llmConfig }); setShowSettings(true) }} aria-label="打开设置">
               <SettingsIcon />
             </button>
             <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} aria-label={darkMode ? '切换浅色模式' : '切换深色模式'}>
@@ -681,6 +699,59 @@ function App() {
         <button className="export-btn" onClick={handleExport} aria-label="导出任务列表">
           {exportTip ? <><ClipboardIcon /> 已复制</> : <><ClipboardIcon /> 导出</>}
         </button>
+      </div>
+
+      {/* Settings Drawer */}
+      {showSettings && (
+        <div className="drawer-backdrop" onClick={() => setShowSettings(false)} aria-hidden="true" />
+      )}
+      <div className={`settings-drawer ${showSettings ? 'open' : ''}`} role="dialog" aria-label="模型设置" aria-modal="true">
+        <div className="drawer-header">
+          <span className="drawer-title">模型设置</span>
+          <button className="drawer-close" onClick={() => setShowSettings(false)} aria-label="关闭设置">
+            <XIcon />
+          </button>
+        </div>
+        <div className="drawer-body">
+          <label className="settings-label" htmlFor="settings-baseurl">API 地址</label>
+          <input
+            id="settings-baseurl"
+            className="settings-input"
+            type="url"
+            autoComplete="off"
+            value={settingsDraft.baseURL}
+            onChange={e => setSettingsDraft(prev => ({ ...prev, baseURL: e.target.value }))}
+          />
+          <label className="settings-label" htmlFor="settings-apikey">API Key</label>
+          <div className="settings-input-wrap">
+            <input
+              id="settings-apikey"
+              className="settings-input"
+              type={showApiKey ? 'text' : 'password'}
+              autoComplete="off"
+              value={settingsDraft.apiKey}
+              onChange={e => setSettingsDraft(prev => ({ ...prev, apiKey: e.target.value }))}
+            />
+            <button className="eye-btn" onClick={() => setShowApiKey(v => !v)} aria-label={showApiKey ? '隐藏 Key' : '显示 Key'}>
+              {showApiKey ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
+          <label className="settings-label" htmlFor="settings-model">模型名称</label>
+          <input
+            id="settings-model"
+            className="settings-input"
+            type="text"
+            autoComplete="off"
+            value={settingsDraft.model}
+            onChange={e => setSettingsDraft(prev => ({ ...prev, model: e.target.value }))}
+          />
+          <button
+            className={`settings-save-btn ${settingsSaved ? 'saved' : ''}`}
+            onClick={handleSaveSettings}
+          >
+            {settingsSaved ? '✓ 已保存' : '保存'}
+          </button>
+        </div>
       </div>
     </div>
   )
