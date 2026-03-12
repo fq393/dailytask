@@ -466,6 +466,12 @@ function App() {
   const formatMins = (mins: number) =>
     mins >= 60 ? `${Math.round(mins / 60 * 10) / 10}h` : `${mins}分`
 
+  const getElapsedMins = (task: Task): number | null => {
+    if (!task.startedAt) return null
+    if (task.completed && task.actualMinutes != null) return task.actualMinutes
+    return (Date.now() - task.startedAt) / 60000
+  }
+
   // ── History page ──────────────────────────────────────────────────
   if (page === 'history') {
     const completedByDate = tasks
@@ -634,12 +640,22 @@ function App() {
                     <div className="task-title-row">
                       <span className="task-title">{task.text}</span>
                       <span className="task-time-tag">
-                        {estimatingIds.has(task.id)
-                          ? <span className="estimating">估算中…</span>
-                          : task.estimatedMinutes
+                        {estimatingIds.has(task.id) ? (
+                          <span className="estimating">估算中…</span>
+                        ) : (() => {
+                          const elapsed = getElapsedMins(task)
+                          if (elapsed != null && task.estimatedMinutes) {
+                            if (task.completed) {
+                              return <span className="time-badge time-badge--done"><ClockIcon /> {formatMins(elapsed)} 实际</span>
+                            }
+                            return <span className={`time-badge ${elapsed > task.estimatedMinutes ? 'time-badge--over' : ''}`}>
+                              <ClockIcon /> {formatMins(elapsed)}
+                            </span>
+                          }
+                          return task.estimatedMinutes
                             ? <span className="time-badge"><ClockIcon /> {formatMins(task.estimatedMinutes)}</span>
                             : null
-                        }
+                        })()}
                       </span>
                     </div>
                     {task.dueDate && (
@@ -688,6 +704,26 @@ function App() {
                     </div>
                   </div>
                 )}
+                {/* Timer progress bar */}
+                {(() => {
+                  const elapsed = getElapsedMins(task)
+                  if (elapsed == null || !task.estimatedMinutes || task.estimatedMinutes <= 0) return null
+                  const pct = Math.min(elapsed / task.estimatedMinutes, 1) * 100
+                  const overPct = elapsed > task.estimatedMinutes
+                    ? Math.min((elapsed - task.estimatedMinutes) / task.estimatedMinutes, 1) * 100
+                    : 0
+                  return (
+                    <div
+                      className={`task-progress-track ${task.completed ? 'task-progress-track--done' : ''}`}
+                      title={`已用 ${formatMins(elapsed)} / 预计 ${formatMins(task.estimatedMinutes)}`}
+                    >
+                      <div className="task-progress-fill" style={{ width: `${pct}%` }} />
+                      {overPct > 0 && (
+                        <div className="task-progress-over" style={{ width: `${overPct}%` }} />
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )
           })

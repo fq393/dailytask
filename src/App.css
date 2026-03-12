@@ -756,6 +756,45 @@ body.mac .header { top: 28px; }
   border-radius: 4px;
 }
 
+/* ── Task Timer Progress Bar ── */
+.task-progress-track {
+  position: relative;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden;
+}
+
+.task-progress-fill {
+  position: absolute;
+  left: 0; top: 0; height: 100%;
+  background: var(--accent);
+  transition: width 0.5s ease-out;
+}
+
+.task-progress-over {
+  position: absolute;
+  right: 0; top: 0; height: 100%;
+  background: var(--danger);
+  transition: width 0.5s ease-out;
+  opacity: 0.85;
+}
+
+.task-progress-track--done .task-progress-fill {
+  background: var(--text2);
+  opacity: 0.5;
+}
+.task-progress-track--done .task-progress-over { display: none; }
+
+/* Time badge variants */
+.time-badge--over { color: var(--danger); }
+.time-badge--done { color: var(--text2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .task-progress-fill,
+  .task-progress-over { transition: none; }
+}
+
 /* ── Settings Drawer ── */
 .drawer-backdrop {
   position: fixed;
