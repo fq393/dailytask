@@ -1,4 +1,4 @@
-import type { Task, CatProgress } from './types'
+import type { Task, CatProgress, LLMConfig } from './types'
 
 // Use Electron file storage (userData directory) when available,
 // fallback to localStorage for dev/browser environments
@@ -57,4 +57,17 @@ export function saveCat(progress: CatProgress): void {
   const data = JSON.stringify(progress)
   api()?.save('cat', data)
   try { localStorage.setItem('dailytask-cat-progress', data) } catch {}
+}
+
+// ── LLM Config ────────────────────────────────────────────────────────
+export async function loadLLMConfig(): Promise<LLMConfig | null> {
+  try {
+    const raw = await api()?.load('llm-config')
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return null
+}
+
+export function saveLLMConfig(config: LLMConfig): void {
+  api()?.save('llm-config', JSON.stringify(config))
 }
