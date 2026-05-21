@@ -19,7 +19,9 @@ export async function authenticate(oaAccount: string): Promise<void> {
   if (oaData.code !== 200) throw new Error(`OA 登录错误: ${oaData.msg}`)
 
   // msg format: "LtpaToken=AAECAz..."
-  const ltpaToken = (oaData.msg as string).replace('LtpaToken=', '').trim()
+  const rawMsg: string = typeof oaData.msg === 'string' ? oaData.msg : String(oaData.msg)
+  const ltpaToken = rawMsg.split('LtpaToken=')[1]?.trim() ?? ''
+  if (!ltpaToken) throw new Error('OA 登录响应缺少 LtpaToken')
 
   const ssoRes = await fetch(`${YBZ_BASE}/sys/agentLogin`, {
     method: 'POST',
@@ -30,6 +32,7 @@ export async function authenticate(oaAccount: string): Promise<void> {
   if (!ssoRes.ok) throw new Error(`单点登录失败 (${ssoRes.status})`)
   const ssoData = await ssoRes.json()
   if (ssoData.code !== 200) throw new Error(`单点登录错误: ${ssoData.msg}`)
+  if (!ssoData.data?.token) throw new Error('单点登录响应缺少 token')
 
   _jwt = ssoData.data.token
 }
@@ -46,7 +49,10 @@ export async function getProjects(): Promise<YbzProject[]> {
     body: JSON.stringify({ projectName: '', page: 1, dailyCategoryId: null, projectStatus: '' }),
     signal: AbortSignal.timeout(10000),
   })
-  if (!res.ok) throw new Error(`获取项目列表失败 (${res.status})`)
+  if (!res.ok) {
+    if (res.status === 401) clearJwt()
+    throw new Error(`获取项目列表失败 (${res.status})`)
+  }
   const data = await res.json()
   if (data.code !== 200) throw new Error(data.msg)
   return data.list ?? []
@@ -66,7 +72,10 @@ export async function getDailyList(startDate: string, endDate: string): Promise<
     body: JSON.stringify({ startDate, endDate, page: 1, pageSize: 100 }),
     signal: AbortSignal.timeout(10000),
   })
-  if (!res.ok) throw new Error(`获取日报列表失败 (${res.status})`)
+  if (!res.ok) {
+    if (res.status === 401) clearJwt()
+    throw new Error(`获取日报列表失败 (${res.status})`)
+  }
   const data = await res.json()
   if (data.code !== 200) throw new Error(data.msg)
   return data.list ?? []
@@ -84,7 +93,10 @@ export async function addOrEditDaily(payload: {
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(10000),
   })
-  if (!res.ok) throw new Error(`提交日报失败 (${res.status})`)
+  if (!res.ok) {
+    if (res.status === 401) clearJwt()
+    throw new Error(`提交日报失败 (${res.status})`)
+  }
   const data = await res.json()
   if (data.code !== 200) throw new Error(data.msg)
   return data.data.dailyId
