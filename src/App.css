@@ -1435,3 +1435,192 @@ body.mac .drawer-header { padding-top: 48px; }
 }
 .submit-result--ok { background: #dcfce7; color: #15803d; }
 .submit-result--partial { background: #fef3c7; color: #92400e; }
+
+/* ── Browser History Drawer ─────────────────────────────────────── */
+.bh-open-btn {
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.15s, color 0.15s;
+}
+.bh-open-btn:hover { color: var(--text); }
+
+.bh-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+}
+
+.bh-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 50;
+  background: var(--bg-card, var(--bg));
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 20px rgba(0,0,0,0.12);
+}
+
+.bh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.bh-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.bh-header-actions { display: flex; gap: 6px; align-items: center; }
+.bh-refresh-btn, .bh-close-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.bh-refresh-btn:hover, .bh-close-btn:hover { background: var(--border); color: var(--text); }
+.bh-refresh-btn:disabled { opacity: 0.4; cursor: default; }
+
+.bh-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 0;
+}
+
+.bh-loading, .bh-empty {
+  padding: 20px 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.bh-error {
+  margin: 10px 14px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.bh-day {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.bh-day--empty { opacity: 0.45; }
+
+.bh-day-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-radius: 4px;
+  user-select: none;
+}
+.bh-day-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.bh-day-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.bh-import-day-btn {
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s, border-color 0.12s;
+}
+.bh-import-day-btn:hover { color: var(--accent); border-color: var(--accent); }
+.bh-day-caret { font-size: 11px; color: var(--text-muted); }
+
+.bh-domain-list {
+  list-style: none;
+  padding: 4px 0 6px 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bh-domain-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 12px;
+  padding: 1px 0;
+}
+.bh-domain-name {
+  color: var(--text);
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+.bh-domain-count {
+  color: var(--text-muted);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.bh-domain-title {
+  color: var(--text-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.bh-footer {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.bh-import-week-btn {
+  width: 100%;
+  padding: 9px;
+  border-radius: 7px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.bh-import-week-btn:hover { opacity: 0.88; }
+
+.bh-empty-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
