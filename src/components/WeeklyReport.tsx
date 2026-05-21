@@ -1,9 +1,10 @@
 // src/components/WeeklyReport.tsx
 import { useState } from 'react'
 import type { WeekDayPreview, YbzProject } from '../types'
+import { WORKING_TYPES } from '../types'
 import TabBar, { type TabId } from './TabBar'
 import { llmCall } from '../llm'
-import { authenticate, getProjects, getDailyList, isAuthenticated } from '../services/ybzApi'
+import { authenticate, getProjects, getDailyList, isAuthenticated, addOrEditDaily } from '../services/ybzApi'
 
 // ── Week helpers ─────────────────────────────────────────────────────
 function getWeekDates(offset: number): string[] {
@@ -147,7 +148,85 @@ export default function WeeklyReport({
   const dates = getWeekDates(weekOffset)
   const weekHeader = formatWeekHeader(dates)
 
-  void projects
+  const updateWork = (date: string, workId: string, field: string, value: string | number | null) => {
+    setPreview(prev => prev?.map(day =>
+      day.date !== date ? day : {
+        ...day,
+        works: day.works.map(w => w.id !== workId ? w : { ...w, [field]: value }),
+      }
+    ) ?? null)
+  }
+
+  const deleteWork = (date: string, workId: string) => {
+    setPreview(prev => prev?.map(day =>
+      day.date !== date ? day : { ...day, works: day.works.filter(w => w.id !== workId) }
+    ) ?? null)
+  }
+
+  const addWork = (date: string) => {
+    setPreview(prev => prev?.map(day =>
+      day.date !== date ? day : {
+        ...day,
+        works: [...day.works, {
+          id: crypto.randomUUID(),
+          projectId: null,
+          projectName: '',
+          workingType: '开发' as import('../types').WorkingType,
+          workingHours: 1,
+          workingContent: '',
+        }],
+      }
+    ) ?? null)
+  }
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitResult, setSubmitResult] = useState<{ success: number; failed: number } | null>(null)
+
+  const handleSubmit = async () => {
+    if (!preview || isSubmitting) return
+    setIsSubmitting(true)
+    setSubmitResult(null)
+
+    let success = 0
+    let failed = 0
+
+    for (const day of preview) {
+      if (day.works.length === 0) continue
+
+      const grouped = new Map<number, typeof day.works>()
+      for (const work of day.works) {
+        if (work.projectId == null) continue
+        grouped.set(work.projectId, [...(grouped.get(work.projectId) ?? []), work])
+      }
+
+      for (const [projectId, works] of grouped) {
+        try {
+          const existingDailyId = day.existingDailyMap[projectId]
+          await addOrEditDaily({
+            ...(existingDailyId !== undefined ? { dailyId: existingDailyId } : {}),
+            projectId,
+            reportDate: day.date,
+            works: works.map(w => ({
+              workingHours: w.workingHours,
+              workingContent: w.workingContent,
+              workingType: w.workingType,
+            })),
+          })
+          success++
+        } catch {
+          failed++
+        }
+      }
+    }
+
+    setIsSubmitting(false)
+    setSubmitResult({ success, failed })
+  }
+
+  const canSubmit =
+    !!preview &&
+    preview.some(d => d.works.length > 0) &&
+    !preview.some(d => d.works.some(w => w.projectId == null))
 
   return (
     <div className={`app ${darkMode ? 'dark' : ''}`}>
@@ -206,11 +285,107 @@ export default function WeeklyReport({
           </div>
         </div>
 
-        {!preview && !inputText.trim() && (
-          <div className="weekly-placeholder">描述你这周干了什么，AI 帮你分配到每天</div>
-        )}
-        {!preview && inputText.trim() && (
-          <div className="weekly-placeholder">点击 "AI 分配 →" 生成每日预览</div>
+        {preview ? (
+          <div className="preview-section">
+            <div className="preview-section-title">预览 & 确认</div>
+            {preview.map(day => {
+              const totalHours = day.works.reduce((s, w) => s + (Number(w.workingHours) || 0), 0)
+              const isOverload = totalHours > 8
+              const hasExisting = Object.keys(day.existingDailyMap).length > 0
+              return (
+                <div key={day.date} className={`preview-day ${isOverload ? 'preview-day--overload' : ''}`}>
+                  <div className="preview-day-header">
+                    <span className="preview-day-label">
+                      {day.weekdayLabel} {day.date.slice(5).replace('-', '/')}
+                    </span>
+                    <span className={`preview-day-hours ${isOverload ? 'preview-hours-over' : ''}`}>
+                      {totalHours}h
+                    </span>
+                    {hasExisting && <span className="preview-existing-tag">追加</span>}
+                  </div>
+
+                  {day.works.map(work => (
+                    <div key={work.id} className="preview-work-row">
+                      <select
+                        className={`preview-select preview-project ${work.projectId == null ? 'preview-select--invalid' : ''}`}
+                        value={work.projectId ?? ''}
+                        onChange={e => {
+                          const pid = e.target.value ? Number(e.target.value) : null
+                          const pName = projects.find(p => p.projectId === pid)?.projectName ?? ''
+                          updateWork(day.date, work.id, 'projectId', pid)
+                          updateWork(day.date, work.id, 'projectName', pName)
+                        }}
+                      >
+                        <option value="">请选择项目</option>
+                        {projects.map(p => (
+                          <option key={p.projectId} value={p.projectId}>{p.projectName}</option>
+                        ))}
+                      </select>
+
+                      <select
+                        className="preview-select preview-type"
+                        value={work.workingType}
+                        onChange={e => updateWork(day.date, work.id, 'workingType', e.target.value)}
+                      >
+                        {WORKING_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+
+                      <input
+                        className="preview-hours-input"
+                        type="number"
+                        min="0.5"
+                        max="8"
+                        step="0.5"
+                        value={work.workingHours}
+                        onChange={e => updateWork(day.date, work.id, 'workingHours', parseFloat(e.target.value) || 0)}
+                      />
+                      <span className="preview-hours-unit">h</span>
+
+                      <input
+                        className="preview-content-input"
+                        type="text"
+                        value={work.workingContent}
+                        placeholder="工作内容"
+                        onChange={e => updateWork(day.date, work.id, 'workingContent', e.target.value)}
+                      />
+
+                      <button
+                        className="preview-delete-btn"
+                        onClick={() => deleteWork(day.date, work.id)}
+                        aria-label="删除条目"
+                      >×</button>
+                    </div>
+                  ))}
+
+                  <button className="preview-add-btn" onClick={() => addWork(day.date)}>
+                    + 添加条目
+                  </button>
+                </div>
+              )
+            })}
+            <div className="submit-section">
+              {submitResult && (
+                <div className={`submit-result ${submitResult.failed > 0 ? 'submit-result--partial' : 'submit-result--ok'}`}>
+                  {submitResult.failed === 0
+                    ? `✓ 提交成功 ${submitResult.success} 条`
+                    : `提交完成：${submitResult.success} 条成功，${submitResult.failed} 条失败`
+                  }
+                </div>
+              )}
+              <button
+                className="submit-all-btn"
+                onClick={handleSubmit}
+                disabled={isSubmitting || !canSubmit}
+                title={!canSubmit ? '请先为所有条目选择项目' : ''}
+              >
+                {isSubmitting ? '提交中…' : '提交全部'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="weekly-placeholder">
+            {inputText.trim() ? '点击 "AI 分配 →" 生成每日预览' : '描述你这周干了什么，AI 帮你分配到每天'}
+          </div>
         )}
       </div>
 
