@@ -30,7 +30,6 @@ const HistoryIcon = () => (
 const TABS: { id: TabId; label: string; Icon: React.FC }[] = [
   { id: 'tasks',   label: '今日', Icon: TaskIcon },
   { id: 'weekly',  label: '周报', Icon: WeeklyIcon },
-  { id: 'history', label: '历史', Icon: HistoryIcon },
 ]
 
 export default function TabBar({ active, onChange }: TabBarProps) {

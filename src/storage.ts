@@ -65,9 +65,15 @@ export async function loadLLMConfig(): Promise<LLMConfig | null> {
     const raw = await api()?.load('llm-config')
     if (raw) return JSON.parse(raw)
   } catch {}
+  try {
+    const s = localStorage.getItem('dailytask-llm-config')
+    if (s) return JSON.parse(s)
+  } catch {}
   return null
 }
 
 export function saveLLMConfig(config: LLMConfig): void {
-  api()?.save('llm-config', JSON.stringify(config))
+  const data = JSON.stringify(config)
+  api()?.save('llm-config', data)
+  try { localStorage.setItem('dailytask-llm-config', data) } catch {}
 }

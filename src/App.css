@@ -1091,6 +1091,14 @@ body.mac .drawer-header { padding-top: 48px; }
   text-align: center;
   flex-shrink: 0;
 }
+.loading-banner {
+  background: #f0f9ff;
+  color: #0369a1;
+  font-size: 12px;
+  padding: 8px 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
 .oa-missing-banner {
   background: #fef3c7;
   color: #92400e;

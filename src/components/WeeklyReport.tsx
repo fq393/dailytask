@@ -1,10 +1,32 @@
 // src/components/WeeklyReport.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { WeekDayPreview, YbzProject } from '../types'
 import { WORKING_TYPES } from '../types'
 import TabBar, { type TabId } from './TabBar'
 import { llmCall } from '../llm'
 import { authenticate, getProjects, getDailyList, isAuthenticated, addOrEditDaily } from '../services/ybzApi'
+
+// ── Icons ────────────────────────────────────────────────────────────
+const SettingsIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+)
+const SunIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="5"/>
+    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </svg>
+)
+const MoonIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+)
 
 // ── Week helpers ─────────────────────────────────────────────────────
 function getWeekDates(offset: number): string[] {
@@ -60,19 +82,72 @@ interface WeeklyReportProps {
   activeTab: TabId
   onTabChange: (tab: TabId) => void
   onOpenSettings: () => void
+  onToggleDark: () => void
 }
 
 export default function WeeklyReport({
-  darkMode, oaAccount, activeTab, onTabChange, onOpenSettings
+  darkMode, oaAccount, activeTab, onTabChange, onOpenSettings, onToggleDark
 }: WeeklyReportProps) {
   const [weekOffset, setWeekOffset] = useState(0)
   const [inputText, setInputText] = useState('')
   const [preview, setPreview] = useState<WeekDayPreview[] | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
 
+  const dates = getWeekDates(weekOffset)
+  const weekHeader = formatWeekHeader(dates)
+
   const [isPolishing, setIsPolishing] = useState(false)
   const [isAllocating, setIsAllocating] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [projects, setProjects] = useState<YbzProject[]>([])
+
+  // Auto-load existing records when week changes or oaAccount becomes available
+  useEffect(() => {
+    if (!oaAccount) return
+    let cancelled = false
+    const load = async () => {
+      setIsLoading(true)
+      setAuthError(null)
+      try {
+        if (!isAuthenticated()) await authenticate(oaAccount)
+        const [fetchedProjects, existingDailies] = await Promise.all([
+          getProjects(),
+          getDailyList(dates[0], dates[4]),
+        ])
+        if (cancelled) return
+        setProjects(fetchedProjects)
+        const dailyMapByDate: Record<string, Record<number, number>> = {}
+        for (const daily of existingDailies) {
+          if (!dailyMapByDate[daily.reportDate]) dailyMapByDate[daily.reportDate] = {}
+          dailyMapByDate[daily.reportDate][daily.projectId] = daily.dailyId
+        }
+        const loaded: WeekDayPreview[] = dates.map(date => {
+          const dayDailies = existingDailies.filter(d => d.reportDate === date)
+          return {
+            date,
+            weekdayLabel: weekdayLabel(date),
+            works: dayDailies.flatMap(d => d.works.map(w => ({
+              id: crypto.randomUUID(),
+              projectId: d.projectId,
+              projectName: fetchedProjects.find(p => p.projectId === d.projectId)?.projectName ?? '',
+              workingType: w.workingType as import('../types').WorkingType,
+              workingHours: w.workingHours,
+              workingContent: w.workingContent,
+            }))),
+            existingDailyMap: dailyMapByDate[date] ?? {},
+          }
+        })
+        if (loaded.some(d => d.works.length > 0)) setPreview(loaded)
+      } catch (err) {
+        if (!cancelled) setAuthError(err instanceof Error ? err.message : '加载记录失败')
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekOffset, oaAccount])
 
   const handlePolish = async () => {
     if (!inputText.trim() || isPolishing) return
@@ -144,9 +219,6 @@ export default function WeeklyReport({
       setIsAllocating(false)
     }
   }
-
-  const dates = getWeekDates(weekOffset)
-  const weekHeader = formatWeekHeader(dates)
 
   const updateWork = (date: string, workId: string, field: string, value: string | number | null) => {
     setPreview(prev => prev?.map(day =>
@@ -235,20 +307,31 @@ export default function WeeklyReport({
         <div className="header-main">
           <span className="header-title">周报</span>
           <div className="week-selector">
-            <button className="week-nav-btn" onClick={() => setWeekOffset(o => o - 1)} aria-label="上一周">‹</button>
+            <button className="week-nav-btn" onClick={() => { setPreview(null); setWeekOffset(o => o - 1) }} aria-label="上一周">‹</button>
             <span className="week-label">{weekHeader}</span>
             <button
               className="week-nav-btn"
-              onClick={() => setWeekOffset(o => Math.min(o + 1, 0))}
+              onClick={() => { setPreview(null); setWeekOffset(o => Math.min(o + 1, 0)) }}
               aria-label="下一周"
               disabled={weekOffset >= 0}
             >›</button>
+          </div>
+          <div className="header-actions">
+            <button className="settings-btn" onClick={onOpenSettings} aria-label="打开设置">
+              <SettingsIcon />
+            </button>
+            <button className="theme-toggle" onClick={onToggleDark} aria-label="切换主题">
+              {darkMode ? <SunIcon /> : <MoonIcon />}
+            </button>
           </div>
         </div>
       </header>
 
       {authError && (
         <div className="auth-error-banner">{authError}</div>
+      )}
+      {isLoading && (
+        <div className="loading-banner">加载本周记录中…</div>
       )}
       {!oaAccount && (
         <div className="oa-missing-banner">
