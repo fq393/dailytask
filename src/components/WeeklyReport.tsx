@@ -1,8 +1,9 @@
 // src/components/WeeklyReport.tsx
 import { useState, useEffect, useRef } from 'react'
-import type { WeekDayPreview, YbzProject } from '../types'
+import type { WeekDayPreview, YbzProject, CatProgress } from '../types'
 import { WORKING_TYPES } from '../types'
 import TabBar, { type TabId } from './TabBar'
+import PixelCat from './PixelCat'
 import { llmCall } from '../llm'
 import { authenticate, getProjects, getDailyList, isAuthenticated, addOrEditDaily } from '../services/ybzApi'
 
@@ -98,10 +99,14 @@ interface WeeklyReportProps {
   onTabChange: (tab: TabId) => void
   onOpenSettings: () => void
   onToggleDark: () => void
+  catProgress: CatProgress
+  overloadRatio: number
+  onGoHistory: () => void
 }
 
 export default function WeeklyReport({
-  darkMode, oaAccount, activeTab, onTabChange, onOpenSettings, onToggleDark
+  darkMode, oaAccount, activeTab, onTabChange, onOpenSettings, onToggleDark,
+  catProgress, overloadRatio, onGoHistory,
 }: WeeklyReportProps) {
   const [weekOffset, setWeekOffset] = useState(0)
   const [inputText, setInputText] = useState('')
@@ -109,6 +114,18 @@ export default function WeeklyReport({
   const [authError, setAuthError] = useState<string | null>(null)
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
   const weekDateInputRef = useRef<HTMLInputElement>(null)
+
+  // Live clock
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+  const weekdays = ['周日','周一','周二','周三','周四','周五','周六']
+  const todayDateStr = `${months[now.getMonth()]}${now.getDate()}日`
+  const todayWeekday = weekdays[now.getDay()]
+  const clockStr = now.toLocaleTimeString('zh-CN', { hour12: false })
 
   const dates = getWeekDates(weekOffset)
   const weekHeader = formatWeekHeader(dates)
@@ -338,37 +355,13 @@ export default function WeeklyReport({
       <div className="titlebar" />
       <header className="header">
         <div className="header-main">
-          <span className="header-title">周报</span>
-          <div className="week-selector">
-            <button className="week-nav-btn" onClick={() => { setPreview(null); setWeekOffset(o => o - 1) }} aria-label="上一周">‹</button>
-            <span
-              className="week-label week-label--clickable"
-              onClick={() => weekDateInputRef.current?.showPicker()}
-              title="点击选择周"
-            >
-              {weekHeader}
-            </span>
-            {/* Hidden date input — triggered by clicking the week label */}
-            <input
-              ref={weekDateInputRef}
-              type="date"
-              className="week-date-input-hidden"
-              value={dates[0]}
-              max={currentWeekMonday}
-              onChange={e => {
-                if (!e.target.value) return
-                const offset = offsetFromMonday(e.target.value)
-                setPreview(null)
-                setWeekOffset(Math.min(offset, 0))
-              }}
-              aria-label="选择周"
-            />
-            <button
-              className="week-nav-btn"
-              onClick={() => { setPreview(null); setWeekOffset(o => Math.min(o + 1, 0)) }}
-              aria-label="下一周"
-              disabled={weekOffset >= 0}
-            >›</button>
+          <button className="cat-btn" onClick={onGoHistory} aria-label="查看历史记录">
+            <PixelCat progress={catProgress} overloadRatio={overloadRatio} />
+          </button>
+          <div className="header-date">
+            <span className="header-date-main">{todayDateStr}</span>
+            <span className="header-date-sub">{todayWeekday}</span>
+            <span className="header-clock">{clockStr}</span>
           </div>
           <div className="header-actions">
             <button className="settings-btn" onClick={onOpenSettings} aria-label="打开设置">
@@ -380,6 +373,38 @@ export default function WeeklyReport({
           </div>
         </div>
       </header>
+
+      {/* Week navigation sub-row */}
+      <div className="week-nav-row">
+        <button className="week-nav-btn" onClick={() => { setPreview(null); setWeekOffset(o => o - 1) }} aria-label="上一周">‹</button>
+        <span
+          className="week-label week-label--clickable"
+          onClick={() => weekDateInputRef.current?.showPicker()}
+          title="点击选择周"
+        >
+          {weekHeader}
+        </span>
+        <input
+          ref={weekDateInputRef}
+          type="date"
+          className="week-date-input-hidden"
+          value={dates[0]}
+          max={currentWeekMonday}
+          onChange={e => {
+            if (!e.target.value) return
+            const offset = offsetFromMonday(e.target.value)
+            setPreview(null)
+            setWeekOffset(Math.min(offset, 0))
+          }}
+          aria-label="选择周"
+        />
+        <button
+          className="week-nav-btn"
+          onClick={() => { setPreview(null); setWeekOffset(o => Math.min(o + 1, 0)) }}
+          aria-label="下一周"
+          disabled={weekOffset >= 0}
+        >›</button>
+      </div>
 
       {authError && (
         <div className="auth-error-banner">{authError}</div>

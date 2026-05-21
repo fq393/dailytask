@@ -508,6 +508,9 @@ function App() {
           onTabChange={setTab}
           onOpenSettings={() => { setSettingsDraft({ ...llmConfig }); setShowSettings(true) }}
           onToggleDark={() => setDarkMode((d: boolean) => !d)}
+          catProgress={catProgress}
+          overloadRatio={dailyLoad.ratio}
+          onGoHistory={() => setTab('history')}
         />
         {settingsDrawer}
       </>
