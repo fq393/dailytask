@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag to release (e.g. v1.0.24)'
+        required: true
+        default: 'v1.0.24'
 
 permissions:
   contents: write
@@ -29,6 +35,7 @@ jobs:
       - name: Upload macOS arm64 artifacts
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
           files: |
             release/*.dmg
             release/*-mac.zip
@@ -53,6 +60,7 @@ jobs:
       - name: Upload macOS x64 artifacts
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
           files: |
             release/*.dmg
             release/*-mac.zip
@@ -75,4 +83,5 @@ jobs:
       - name: Upload Windows artifacts
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
           files: release/*.exe
