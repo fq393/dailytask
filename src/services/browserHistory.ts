@@ -33,7 +33,7 @@ export async function fetchBrowserHistoryForWeek(
   const startMs = new Date(weekDates[0] + 'T00:00:00').getTime()
   const endMs = new Date(weekDates[4] + 'T23:59:59').getTime() + 999
 
-  const raw = await (window as any).electronAPI.browserHistory.read(startMs, endMs)
+  const raw = await (window as any).electronAPI?.browserHistory?.read(startMs, endMs) ?? []
 
   const byDate = new Map<string, Map<string, { count: number; titles: Set<string> }>>()
 
