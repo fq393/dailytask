@@ -1,8 +1,9 @@
 // src/components/WeeklyReport.tsx
 import { useState } from 'react'
-import type { WeekDayPreview } from '../types'
+import type { WeekDayPreview, YbzProject } from '../types'
 import TabBar, { type TabId } from './TabBar'
 import { llmCall } from '../llm'
+import { authenticate, getProjects, getDailyList, isAuthenticated } from '../services/ybzApi'
 
 // ── Week helpers ─────────────────────────────────────────────────────
 function getWeekDates(offset: number): string[] {
@@ -33,6 +34,24 @@ function formatWeekHeader(dates: string[]): string {
 
 const SYSTEM_WEEKLY_POLISH = `你是工作内容润色助手。将用户输入的工作周报整理成简洁专业的中文，保留所有关键信息，去除口语化表达，语言连贯自然。直接输出润色后内容，不加任何前缀说明。`
 
+const SYSTEM_WEEKLY_DISTRIBUTE = `你是工作日志分配助手。根据工作描述，将内容分配到指定工作日，每天总工时不超过 8 小时，合理分配时长（可以是0.5小时的倍数）。同时从项目列表中为每条工作语义匹配最合适的项目（找不到则 projectId 返回 null），工作类型从枚举中选择：设计/开发/部署/联调/测试/推广/运维/其他。
+
+输出严格 JSON 格式，不要任何其他文字：
+[
+  {
+    "date": "YYYY-MM-DD",
+    "works": [
+      {
+        "projectId": <number或null>,
+        "projectName": "<string>",
+        "workingType": "<枚举值>",
+        "workingHours": <number>,
+        "workingContent": "<string>"
+      }
+    ]
+  }
+]`
+
 // ── Component ────────────────────────────────────────────────────────
 interface WeeklyReportProps {
   darkMode: boolean
@@ -51,6 +70,8 @@ export default function WeeklyReport({
   const [authError, setAuthError] = useState<string | null>(null)
 
   const [isPolishing, setIsPolishing] = useState(false)
+  const [isAllocating, setIsAllocating] = useState(false)
+  const [projects, setProjects] = useState<YbzProject[]>([])
 
   const handlePolish = async () => {
     if (!inputText.trim() || isPolishing) return
@@ -65,13 +86,68 @@ export default function WeeklyReport({
     }
   }
 
+  const handleAllocate = async () => {
+    if (!inputText.trim() || isAllocating) return
+    if (!oaAccount) { onOpenSettings(); return }
+
+    setIsAllocating(true)
+    setAuthError(null)
+    try {
+      if (!isAuthenticated()) {
+        await authenticate(oaAccount)
+      }
+
+      const [fetchedProjects, existingDailies] = await Promise.all([
+        getProjects(),
+        getDailyList(dates[0], dates[4]),
+      ])
+      setProjects(fetchedProjects)
+
+      // Build projectId → dailyId map per date
+      const dailyMapByDate: Record<string, Record<number, number>> = {}
+      for (const daily of existingDailies) {
+        if (!dailyMapByDate[daily.reportDate]) dailyMapByDate[daily.reportDate] = {}
+        dailyMapByDate[daily.reportDate][daily.projectId] = daily.dailyId
+      }
+
+      const projectList = fetchedProjects.map(p => `${p.projectId}: ${p.projectName}`).join('\n')
+      const userPrompt = `工作描述：\n${inputText}\n\n目标日期（周一到周五）：${dates.join(', ')}\n\n项目列表（id: 名称）：\n${projectList}`
+
+      const raw = await llmCall(SYSTEM_WEEKLY_DISTRIBUTE, userPrompt, 2048)
+
+      const jsonMatch = raw.match(/\[[\s\S]*\]/)
+      if (!jsonMatch) throw new Error('AI 返回格式错误，请重试')
+
+      const allocated: {
+        date: string
+        works: { projectId: number | null; projectName: string; workingType: string; workingHours: number; workingContent: string }[]
+      }[] = JSON.parse(jsonMatch[0])
+
+      const newPreview: WeekDayPreview[] = dates.map(date => ({
+        date,
+        weekdayLabel: weekdayLabel(date),
+        works: (allocated.find(d => d.date === date)?.works ?? []).map(w => ({
+          id: crypto.randomUUID(),
+          projectId: w.projectId,
+          projectName: w.projectName,
+          workingType: w.workingType as import('../types').WorkingType,
+          workingHours: w.workingHours,
+          workingContent: w.workingContent,
+        })),
+        existingDailyMap: dailyMapByDate[date] ?? {},
+      }))
+      setPreview(newPreview)
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'AI 分配失败，请重试')
+    } finally {
+      setIsAllocating(false)
+    }
+  }
+
   const dates = getWeekDates(weekOffset)
   const weekHeader = formatWeekHeader(dates)
 
-  // weekdayLabel is used in future tasks; reference here to avoid dead-code removal
-  void weekdayLabel
-  // setPreview, setAuthError referenced to satisfy linter
-  void setPreview; void setAuthError
+  void projects
 
   return (
     <div className={`app ${darkMode ? 'dark' : ''}`}>
@@ -119,6 +195,14 @@ export default function WeeklyReport({
               ✨ {isPolishing ? '润色中…' : 'AI 润色'}
             </button>
             {/* AI distribute button — added in Task 7 */}
+            <button
+              className={`allocate-btn ${isAllocating ? 'loading' : ''}`}
+              onClick={handleAllocate}
+              disabled={isAllocating || !inputText.trim() || !oaAccount}
+              title={!oaAccount ? '请先在设置中填写 OA 账号' : ''}
+            >
+              {isAllocating ? '分配中…' : 'AI 分配 →'}
+            </button>
           </div>
         </div>
 

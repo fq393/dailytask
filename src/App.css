@@ -1153,3 +1153,15 @@ body.mac .drawer-header { padding-top: 48px; }
   transition: opacity 0.15s;
 }
 .polish-btn:disabled { opacity: 0.5; cursor: default; }
+.allocate-btn {
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.allocate-btn:disabled { opacity: 0.5; cursor: default; }
