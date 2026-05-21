@@ -82,7 +82,7 @@ function offsetFromMonday(pickedMonday: string): number {
 
 const SYSTEM_WEEKLY_POLISH = `你是工作内容润色助手。将用户输入的工作周报整理成简洁专业的中文，保留所有关键信息，去除口语化表达，语言连贯自然。直接输出润色后内容，不加任何前缀说明。`
 
-const SYSTEM_WEEKLY_DISTRIBUTE = `你是工作日志分配助手。根据工作描述，将内容分配到指定工作日，每天总工时不超过 8 小时，合理分配时长（可以是0.5小时的倍数）。同时从项目列表中为每条工作语义匹配最合适的项目（找不到则 projectId 返回 null），工作类型从枚举中选择：设计/开发/部署/联调/测试/推广/运维/其他。
+const SYSTEM_WEEKLY_DISTRIBUTE = `你是工作日志分配助手。根据工作描述，将内容分配到指定工作日，每天总工时不超过 8 小时，合理分配时长（可以是0.5小时的倍数）。同时从项目列表中为每条工作语义匹配最合适的项目（找不到则 projectId 返回 null），workingType 必须从该项目的"可用类型"列表中选择，若项目无可用类型则从全局枚举中选：设计/开发/部署/联调/测试/推广/运维/其他。
 
 输出严格 JSON 格式，不要任何其他文字：
 [
@@ -287,7 +287,10 @@ export default function WeeklyReport({
         dailyMapByDate[daily.reportDate][daily.projectId] = daily.dailyId
       }
 
-      const projectList = fetchedProjects.map(p => `${p.projectId}: ${p.projectName}`).join('\n')
+      const projectList = fetchedProjects.map(p => {
+        const types = p.workingType?.length ? p.workingType.join('/') : '设计/开发/部署/联调/测试/推广/运维/其他'
+        return `${p.projectId}: ${p.projectName}（可用类型：${types}）`
+      }).join('\n')
       const userPrompt = `工作描述：\n${inputText}\n\n目标日期（周一到周五）：${dates.join(', ')}\n\n项目列表（id: 名称）：\n${projectList}`
 
       const raw = await llmCall(SYSTEM_WEEKLY_DISTRIBUTE, userPrompt, 2048)
@@ -593,7 +596,10 @@ export default function WeeklyReport({
                             value={work.workingType}
                             onChange={e => updateWork(day.date, work.id, 'workingType', e.target.value)}
                           >
-                            {WORKING_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                            {(projects.find(p => p.projectId === work.projectId)?.workingType?.length
+                              ? projects.find(p => p.projectId === work.projectId)!.workingType
+                              : WORKING_TYPES
+                            ).map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
 
                           <input
