@@ -1121,3 +1121,35 @@ body.mac .drawer-header { padding-top: 48px; }
   margin-top: 40px;
   font-size: 13px;
 }
+.weekly-input-section { margin-bottom: 12px; }
+.weekly-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.weekly-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.polish-btn {
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.polish-btn:disabled { opacity: 0.5; cursor: default; }
