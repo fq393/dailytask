@@ -886,6 +886,17 @@ function App() {
             value={settingsDraft.model}
             onChange={e => setSettingsDraft(prev => ({ ...prev, model: e.target.value }))}
           />
+          <div className="settings-divider">日报系统</div>
+          <label className="settings-label" htmlFor="settings-oa">OA 账号</label>
+          <input
+            id="settings-oa"
+            className="settings-input"
+            type="text"
+            autoComplete="off"
+            placeholder="如 fq393"
+            value={settingsDraft.oaAccount ?? ''}
+            onChange={e => setSettingsDraft(prev => ({ ...prev, oaAccount: e.target.value.trim() }))}
+          />
           <button
             className={`settings-save-btn ${settingsSaved ? 'saved' : ''}`}
             onClick={handleSaveSettings}

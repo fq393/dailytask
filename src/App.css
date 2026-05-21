@@ -1045,3 +1045,12 @@ body.mac .drawer-header { padding-top: 48px; }
 }
 .tab-bar-item.active { color: var(--accent); }
 .tab-bar-item:hover:not(.active) { color: var(--text); }
+
+.settings-divider {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 14px 0 8px;
+}
