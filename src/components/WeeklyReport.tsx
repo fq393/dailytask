@@ -335,7 +335,8 @@ export default function WeeklyReport({
       )}
       {!oaAccount && (
         <div className="oa-missing-banner">
-          未设置 OA 账号，<button className="link-btn" onClick={onOpenSettings}>去设置</button>
+          未设置 OA 账号
+          <button className="oa-settings-btn" onClick={onOpenSettings}>去设置 →</button>
         </div>
       )}
 

@@ -1106,6 +1106,36 @@ body.mac .drawer-header { padding-top: 48px; }
   padding: 8px 16px;
   text-align: center;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.oa-settings-btn {
+  background: #92400e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.oa-settings-btn:hover {
+  background: #78350f;
+}
+.dark .oa-missing-banner {
+  background: #451a03;
+  color: #fde68a;
+}
+.dark .oa-settings-btn {
+  background: #fde68a;
+  color: #451a03;
+}
+.dark .oa-settings-btn:hover {
+  background: #fcd34d;
 }
 .link-btn {
   background: none;

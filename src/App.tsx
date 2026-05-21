@@ -457,17 +457,60 @@ function App() {
     return (Date.now() - task.startedAt) / 60000
   }
 
+  // ── Settings drawer (shared across tabs) ─────────────────────────
+  const settingsDrawer = (
+    <>
+      {showSettings && (
+        <div className="drawer-backdrop" onClick={() => setShowSettings(false)} aria-hidden="true" />
+      )}
+      <div className={`settings-drawer ${showSettings ? 'open' : ''}`} role="dialog" aria-label="模型设置" aria-modal="true">
+        <div className="drawer-header">
+          <span className="drawer-title">模型设置</span>
+          <button className="drawer-close" onClick={() => setShowSettings(false)} aria-label="关闭设置">
+            <XIcon />
+          </button>
+        </div>
+        <div className="drawer-body">
+          <label className="settings-label" htmlFor="settings-baseurl">API 地址</label>
+          <input id="settings-baseurl" className="settings-input" type="url" autoComplete="off"
+            value={settingsDraft.baseURL} onChange={e => setSettingsDraft(prev => ({ ...prev, baseURL: e.target.value }))} />
+          <label className="settings-label" htmlFor="settings-apikey">API Key</label>
+          <div className="settings-input-wrap">
+            <input id="settings-apikey" className="settings-input" type={showApiKey ? 'text' : 'password'} autoComplete="off"
+              value={settingsDraft.apiKey} onChange={e => setSettingsDraft(prev => ({ ...prev, apiKey: e.target.value }))} />
+            <button className="eye-btn" onClick={() => setShowApiKey(v => !v)} aria-label={showApiKey ? '隐藏 Key' : '显示 Key'}>
+              {showApiKey ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
+          <label className="settings-label" htmlFor="settings-model">模型名称</label>
+          <input id="settings-model" className="settings-input" type="text" autoComplete="off"
+            value={settingsDraft.model} onChange={e => setSettingsDraft(prev => ({ ...prev, model: e.target.value }))} />
+          <div className="settings-divider">日报系统</div>
+          <label className="settings-label" htmlFor="settings-oa">OA 账号</label>
+          <input id="settings-oa" className="settings-input" type="text" autoComplete="off" placeholder="如 fq393"
+            value={settingsDraft.oaAccount ?? ''} onChange={e => setSettingsDraft(prev => ({ ...prev, oaAccount: e.target.value.trim() }))} />
+          <button className={`settings-save-btn ${settingsSaved ? 'saved' : ''}`} onClick={handleSaveSettings}>
+            {settingsSaved ? '✓ 已保存' : '保存'}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+
   // ── Weekly page ───────────────────────────────────────────────────
   if (tab === 'weekly') {
     return (
-      <WeeklyReport
-        darkMode={darkMode}
-        oaAccount={llmConfig.oaAccount ?? ''}
-        activeTab={tab}
-        onTabChange={setTab}
-        onOpenSettings={() => { setSettingsDraft({ ...llmConfig }); setShowSettings(true) }}
-        onToggleDark={() => setDarkMode((d: boolean) => !d)}
-      />
+      <>
+        <WeeklyReport
+          darkMode={darkMode}
+          oaAccount={llmConfig.oaAccount ?? ''}
+          activeTab={tab}
+          onTabChange={setTab}
+          onOpenSettings={() => { setSettingsDraft({ ...llmConfig }); setShowSettings(true) }}
+          onToggleDark={() => setDarkMode((d: boolean) => !d)}
+        />
+        {settingsDrawer}
+      </>
     )
   }
 
@@ -843,68 +886,7 @@ function App() {
       <TabBar active={tab} onChange={setTab} />
 
       {/* Settings Drawer */}
-      {showSettings && (
-        <div className="drawer-backdrop" onClick={() => setShowSettings(false)} aria-hidden="true" />
-      )}
-      <div className={`settings-drawer ${showSettings ? 'open' : ''}`} role="dialog" aria-label="模型设置" aria-modal="true">
-        <div className="drawer-header">
-          <span className="drawer-title">模型设置</span>
-          <button className="drawer-close" onClick={() => setShowSettings(false)} aria-label="关闭设置">
-            <XIcon />
-          </button>
-        </div>
-        <div className="drawer-body">
-          <label className="settings-label" htmlFor="settings-baseurl">API 地址</label>
-          <input
-            id="settings-baseurl"
-            className="settings-input"
-            type="url"
-            autoComplete="off"
-            value={settingsDraft.baseURL}
-            onChange={e => setSettingsDraft(prev => ({ ...prev, baseURL: e.target.value }))}
-          />
-          <label className="settings-label" htmlFor="settings-apikey">API Key</label>
-          <div className="settings-input-wrap">
-            <input
-              id="settings-apikey"
-              className="settings-input"
-              type={showApiKey ? 'text' : 'password'}
-              autoComplete="off"
-              value={settingsDraft.apiKey}
-              onChange={e => setSettingsDraft(prev => ({ ...prev, apiKey: e.target.value }))}
-            />
-            <button className="eye-btn" onClick={() => setShowApiKey(v => !v)} aria-label={showApiKey ? '隐藏 Key' : '显示 Key'}>
-              {showApiKey ? <EyeOffIcon /> : <EyeIcon />}
-            </button>
-          </div>
-          <label className="settings-label" htmlFor="settings-model">模型名称</label>
-          <input
-            id="settings-model"
-            className="settings-input"
-            type="text"
-            autoComplete="off"
-            value={settingsDraft.model}
-            onChange={e => setSettingsDraft(prev => ({ ...prev, model: e.target.value }))}
-          />
-          <div className="settings-divider">日报系统</div>
-          <label className="settings-label" htmlFor="settings-oa">OA 账号</label>
-          <input
-            id="settings-oa"
-            className="settings-input"
-            type="text"
-            autoComplete="off"
-            placeholder="如 fq393"
-            value={settingsDraft.oaAccount ?? ''}
-            onChange={e => setSettingsDraft(prev => ({ ...prev, oaAccount: e.target.value.trim() }))}
-          />
-          <button
-            className={`settings-save-btn ${settingsSaved ? 'saved' : ''}`}
-            onClick={handleSaveSettings}
-          >
-            {settingsSaved ? '✓ 已保存' : '保存'}
-          </button>
-        </div>
-      </div>
+      {settingsDrawer}
     </div>
   )
 }
