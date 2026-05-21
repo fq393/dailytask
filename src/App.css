@@ -1072,6 +1072,19 @@ body.mac .drawer-header { padding-top: 48px; }
   color: var(--text-muted);
   white-space: nowrap;
 }
+.week-label--clickable {
+  cursor: pointer;
+  border-bottom: 1px dashed var(--text-muted);
+  padding-bottom: 1px;
+}
+.week-label--clickable:hover { color: var(--text); }
+.week-date-input-hidden {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
 .week-nav-btn {
   background: none;
   border: none;
@@ -1219,14 +1232,27 @@ body.mac .drawer-header { padding-top: 48px; }
   margin-bottom: 10px;
 }
 .preview-day--overload { border-color: #dc2626; }
+.preview-day--collapsed { padding-bottom: 6px; }
 .preview-day-header {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
+.preview-day-header--toggle {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 4px;
+  margin: -2px;
+  padding: 2px;
+}
+.preview-day-header--toggle:hover { background: rgba(0,0,0,0.04); }
+.dark .preview-day-header--toggle:hover { background: rgba(255,255,255,0.06); }
+.preview-day--collapsed .preview-day-header { margin-bottom: 0; }
+.preview-day-caret { font-size: 11px; color: var(--text-muted); margin-left: 2px; }
 .preview-day-label { font-size: 13px; font-weight: 600; color: var(--text); }
 .preview-day-hours { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+.preview-day-caret { font-size: 11px; color: var(--text-muted); margin-left: 2px; margin-right: 0; }
 .preview-hours-over { color: #dc2626 !important; font-weight: 600; }
 .preview-existing-tag {
   font-size: 10px;

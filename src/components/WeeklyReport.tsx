@@ -1,5 +1,5 @@
 // src/components/WeeklyReport.tsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { WeekDayPreview, YbzProject } from '../types'
 import { WORKING_TYPES } from '../types'
 import TabBar, { type TabId } from './TabBar'
@@ -55,6 +55,21 @@ function formatWeekHeader(dates: string[]): string {
   return `${fmt(dates[0])}（一）~ ${fmt(dates[4])}（五）`
 }
 
+// Compute week offset from a picked Monday date string (YYYY-MM-DD)
+function offsetFromMonday(pickedMonday: string): number {
+  const now = new Date()
+  const todayDay = now.getDay()
+  const thisMonday = new Date(now)
+  thisMonday.setDate(now.getDate() - (todayDay === 0 ? 6 : todayDay - 1))
+  thisMonday.setHours(0, 0, 0, 0)
+  const picked = new Date(pickedMonday + 'T00:00:00')
+  const pickedDay = picked.getDay()
+  const pickedMon = new Date(picked)
+  pickedMon.setDate(picked.getDate() - (pickedDay === 0 ? 6 : pickedDay - 1))
+  pickedMon.setHours(0, 0, 0, 0)
+  return Math.round((pickedMon.getTime() - thisMonday.getTime()) / (7 * 24 * 60 * 60 * 1000))
+}
+
 const SYSTEM_WEEKLY_POLISH = `你是工作内容润色助手。将用户输入的工作周报整理成简洁专业的中文，保留所有关键信息，去除口语化表达，语言连贯自然。直接输出润色后内容，不加任何前缀说明。`
 
 const SYSTEM_WEEKLY_DISTRIBUTE = `你是工作日志分配助手。根据工作描述，将内容分配到指定工作日，每天总工时不超过 8 小时，合理分配时长（可以是0.5小时的倍数）。同时从项目列表中为每条工作语义匹配最合适的项目（找不到则 projectId 返回 null），工作类型从枚举中选择：设计/开发/部署/联调/测试/推广/运维/其他。
@@ -92,14 +107,31 @@ export default function WeeklyReport({
   const [inputText, setInputText] = useState('')
   const [preview, setPreview] = useState<WeekDayPreview[] | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set())
+  const weekDateInputRef = useRef<HTMLInputElement>(null)
 
   const dates = getWeekDates(weekOffset)
   const weekHeader = formatWeekHeader(dates)
+  const currentWeekMonday = getWeekDates(0)[0]
 
   const [isPolishing, setIsPolishing] = useState(false)
   const [isAllocating, setIsAllocating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [projects, setProjects] = useState<YbzProject[]>([])
+
+  // Expand days that have works whenever preview changes; reset when preview clears
+  useEffect(() => {
+    if (!preview) { setExpandedDays(new Set()); return }
+    setExpandedDays(new Set(preview.filter(d => d.works.length > 0).map(d => d.date)))
+  }, [preview])
+
+  const toggleDay = (date: string) => {
+    setExpandedDays(prev => {
+      const next = new Set(prev)
+      if (next.has(date)) next.delete(date); else next.add(date)
+      return next
+    })
+  }
 
   // Auto-load existing records when week changes or oaAccount becomes available
   useEffect(() => {
@@ -236,6 +268,7 @@ export default function WeeklyReport({
   }
 
   const addWork = (date: string) => {
+    setExpandedDays(prev => new Set([...prev, date]))
     setPreview(prev => prev?.map(day =>
       day.date !== date ? day : {
         ...day,
@@ -308,7 +341,28 @@ export default function WeeklyReport({
           <span className="header-title">周报</span>
           <div className="week-selector">
             <button className="week-nav-btn" onClick={() => { setPreview(null); setWeekOffset(o => o - 1) }} aria-label="上一周">‹</button>
-            <span className="week-label">{weekHeader}</span>
+            <span
+              className="week-label week-label--clickable"
+              onClick={() => weekDateInputRef.current?.showPicker()}
+              title="点击选择周"
+            >
+              {weekHeader}
+            </span>
+            {/* Hidden date input — triggered by clicking the week label */}
+            <input
+              ref={weekDateInputRef}
+              type="date"
+              className="week-date-input-hidden"
+              value={dates[0]}
+              max={currentWeekMonday}
+              onChange={e => {
+                if (!e.target.value) return
+                const offset = offsetFromMonday(e.target.value)
+                setPreview(null)
+                setWeekOffset(Math.min(offset, 0))
+              }}
+              aria-label="选择周"
+            />
             <button
               className="week-nav-btn"
               onClick={() => { setPreview(null); setWeekOffset(o => Math.min(o + 1, 0)) }}
@@ -357,7 +411,6 @@ export default function WeeklyReport({
             >
               ✨ {isPolishing ? '润色中…' : 'AI 润色'}
             </button>
-            {/* AI distribute button — added in Task 7 */}
             <button
               className={`allocate-btn ${isAllocating ? 'loading' : ''}`}
               onClick={handleAllocate}
@@ -376,74 +429,80 @@ export default function WeeklyReport({
               const totalHours = day.works.reduce((s, w) => s + (Number(w.workingHours) || 0), 0)
               const isOverload = totalHours > 8
               const hasExisting = Object.keys(day.existingDailyMap).length > 0
+              const isExpanded = expandedDays.has(day.date)
               return (
-                <div key={day.date} className={`preview-day ${isOverload ? 'preview-day--overload' : ''}`}>
-                  <div className="preview-day-header">
+                <div key={day.date} className={`preview-day ${isOverload ? 'preview-day--overload' : ''} ${!isExpanded ? 'preview-day--collapsed' : ''}`}>
+                  <div className="preview-day-header preview-day-header--toggle" onClick={() => toggleDay(day.date)}>
                     <span className="preview-day-label">
                       {day.weekdayLabel} {day.date.slice(5).replace('-', '/')}
                     </span>
                     <span className={`preview-day-hours ${isOverload ? 'preview-hours-over' : ''}`}>
-                      {totalHours}h
+                      {totalHours > 0 ? `${totalHours}h` : '—'}
                     </span>
-                    {hasExisting && <span className="preview-existing-tag">追加</span>}
+                    {hasExisting && <span className="preview-existing-tag">已有</span>}
+                    <span className="preview-day-caret">{isExpanded ? '▾' : '▸'}</span>
                   </div>
 
-                  {day.works.map(work => (
-                    <div key={work.id} className="preview-work-row">
-                      <select
-                        className={`preview-select preview-project ${work.projectId == null ? 'preview-select--invalid' : ''}`}
-                        value={work.projectId ?? ''}
-                        onChange={e => {
-                          const pid = e.target.value ? Number(e.target.value) : null
-                          const pName = projects.find(p => p.projectId === pid)?.projectName ?? ''
-                          updateWork(day.date, work.id, 'projectId', pid)
-                          updateWork(day.date, work.id, 'projectName', pName)
-                        }}
-                      >
-                        <option value="">请选择项目</option>
-                        {projects.map(p => (
-                          <option key={p.projectId} value={p.projectId}>{p.projectName}</option>
-                        ))}
-                      </select>
+                  {isExpanded && (
+                    <>
+                      {day.works.map(work => (
+                        <div key={work.id} className="preview-work-row">
+                          <select
+                            className={`preview-select preview-project ${work.projectId == null ? 'preview-select--invalid' : ''}`}
+                            value={work.projectId ?? ''}
+                            onChange={e => {
+                              const pid = e.target.value ? Number(e.target.value) : null
+                              const pName = projects.find(p => p.projectId === pid)?.projectName ?? ''
+                              updateWork(day.date, work.id, 'projectId', pid)
+                              updateWork(day.date, work.id, 'projectName', pName)
+                            }}
+                          >
+                            <option value="">请选择项目</option>
+                            {projects.map(p => (
+                              <option key={p.projectId} value={p.projectId}>{p.projectName}</option>
+                            ))}
+                          </select>
 
-                      <select
-                        className="preview-select preview-type"
-                        value={work.workingType}
-                        onChange={e => updateWork(day.date, work.id, 'workingType', e.target.value)}
-                      >
-                        {WORKING_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
+                          <select
+                            className="preview-select preview-type"
+                            value={work.workingType}
+                            onChange={e => updateWork(day.date, work.id, 'workingType', e.target.value)}
+                          >
+                            {WORKING_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
 
-                      <input
-                        className="preview-hours-input"
-                        type="number"
-                        min="0.5"
-                        max="8"
-                        step="0.5"
-                        value={work.workingHours}
-                        onChange={e => updateWork(day.date, work.id, 'workingHours', parseFloat(e.target.value) || 0)}
-                      />
-                      <span className="preview-hours-unit">h</span>
+                          <input
+                            className="preview-hours-input"
+                            type="number"
+                            min="0.5"
+                            max="8"
+                            step="0.5"
+                            value={work.workingHours}
+                            onChange={e => updateWork(day.date, work.id, 'workingHours', parseFloat(e.target.value) || 0)}
+                          />
+                          <span className="preview-hours-unit">h</span>
 
-                      <input
-                        className="preview-content-input"
-                        type="text"
-                        value={work.workingContent}
-                        placeholder="工作内容"
-                        onChange={e => updateWork(day.date, work.id, 'workingContent', e.target.value)}
-                      />
+                          <input
+                            className="preview-content-input"
+                            type="text"
+                            value={work.workingContent}
+                            placeholder="工作内容"
+                            onChange={e => updateWork(day.date, work.id, 'workingContent', e.target.value)}
+                          />
 
-                      <button
-                        className="preview-delete-btn"
-                        onClick={() => deleteWork(day.date, work.id)}
-                        aria-label="删除条目"
-                      >×</button>
-                    </div>
-                  ))}
+                          <button
+                            className="preview-delete-btn"
+                            onClick={() => deleteWork(day.date, work.id)}
+                            aria-label="删除条目"
+                          >×</button>
+                        </div>
+                      ))}
 
-                  <button className="preview-add-btn" onClick={() => addWork(day.date)}>
-                    + 添加条目
-                  </button>
+                      <button className="preview-add-btn" onClick={() => addWork(day.date)}>
+                        + 添加条目
+                      </button>
+                    </>
+                  )}
                 </div>
               )
             })}
