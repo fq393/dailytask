@@ -287,18 +287,21 @@ function readChromiumHistory(dbPath: string, startMs: number, endMs: number, tmp
   // Chrome timestamps: microseconds since 1601-01-01
   const chromeEpochOffsetMs = 11644473600000
   const toChrome = (ms: number) => (ms + chromeEpochOffsetMs) * 1000
-  const rows = db.prepare(`
-    SELECT u.url, u.title, v.visit_time
-    FROM urls u JOIN visits v ON u.id = v.url
-    WHERE v.visit_time >= ? AND v.visit_time < ?
-    ORDER BY v.visit_time ASC
-  `).all(toChrome(startMs), toChrome(endMs)) as { url: string; title: string; visit_time: number }[]
-  db.close()
-  return rows.map(r => ({
-    url: r.url,
-    title: r.title,
-    visit_time_ms: Math.round(r.visit_time / 1000) - chromeEpochOffsetMs,
-  }))
+  try {
+    const rows = db.prepare(`
+      SELECT u.url, u.title, v.visit_time
+      FROM urls u JOIN visits v ON u.id = v.url
+      WHERE v.visit_time >= ? AND v.visit_time < ?
+      ORDER BY v.visit_time ASC
+    `).all(toChrome(startMs), toChrome(endMs)) as { url: string; title: string; visit_time: number }[]
+    return rows.map(r => ({
+      url: r.url,
+      title: r.title ?? '',
+      visit_time_ms: Math.round(r.visit_time / 1000) - chromeEpochOffsetMs,
+    }))
+  } finally {
+    db.close()
+  }
 }
 
 function readAllChromiumHistory(startMs: number, endMs: number): HistoryRow[] {
@@ -330,22 +333,24 @@ function readSafariHistory(startMs: number, endMs: number): HistoryRow[] {
       if (fs.existsSync(extra)) fs.copyFileSync(extra, tmp + ext)
     }
     const db = new Database(tmp, { readonly: true, fileMustExist: true })
-    // Safari timestamps: seconds since 2001-01-01 (Core Data epoch)
     const safariEpochOffsetMs = 978307200000
     const toSafari = (ms: number) => (ms - safariEpochOffsetMs) / 1000
-    const rows = db.prepare(`
-      SELECT hi.url, hv.title, hv.visit_time
-      FROM history_visits hv
-      JOIN history_items hi ON hv.history_item = hi.id
-      WHERE hv.visit_time >= ? AND hv.visit_time < ?
-      ORDER BY hv.visit_time ASC
-    `).all(toSafari(startMs), toSafari(endMs)) as { url: string; title: string; visit_time: number }[]
-    db.close()
-    return rows.map(r => ({
-      url: r.url,
-      title: r.title ?? '',
-      visit_time_ms: r.visit_time * 1000 + safariEpochOffsetMs,
-    }))
+    try {
+      const rows = db.prepare(`
+        SELECT hi.url, hv.title, hv.visit_time
+        FROM history_visits hv
+        JOIN history_items hi ON hv.history_item = hi.id
+        WHERE hv.visit_time >= ? AND hv.visit_time < ?
+        ORDER BY hv.visit_time ASC
+      `).all(toSafari(startMs), toSafari(endMs)) as { url: string; title: string; visit_time: number }[]
+      return rows.map(r => ({
+        url: r.url,
+        title: r.title ?? '',
+        visit_time_ms: r.visit_time * 1000 + safariEpochOffsetMs,
+      }))
+    } finally {
+      db.close()
+    }
   } catch (e) {
     console.error('Safari history read failed:', e)
     return []
