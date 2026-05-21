@@ -5,6 +5,7 @@ import { DEFAULT_LLM_CONFIG, setActiveLLMConfig, llmCall } from './llm'
 import { useSound } from './hooks/useSound'
 import PixelCat from './components/PixelCat'
 import TabBar, { type TabId } from './components/TabBar'
+import WeeklyReport from './components/WeeklyReport'
 import './App.css'
 
 const SYSTEM_POLISH = `你是一个专业的任务管理助手。用户会提供一个任务的描述内容，请将其优化成结构清晰、有执行力的任务说明。
@@ -461,13 +462,13 @@ function App() {
   // ── Weekly page ───────────────────────────────────────────────────
   if (tab === 'weekly') {
     return (
-      <div className={`app ${darkMode ? 'dark' : ''}`}>
-        <div className="titlebar" />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-          周报（开发中）
-        </div>
-        <TabBar active={tab} onChange={setTab} />
-      </div>
+      <WeeklyReport
+        darkMode={darkMode}
+        oaAccount={llmConfig.oaAccount ?? ''}
+        activeTab={tab}
+        onTabChange={setTab}
+        onOpenSettings={() => { setSettingsDraft({ ...llmConfig }); setShowSettings(true) }}
+      />
     )
   }
 
