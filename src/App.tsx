@@ -1,20 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Task, FilterType, CatProgress, CatSize, LLMConfig } from './types'
 import { loadTasks, loadTasksAsync, saveTasks, loadCat, loadCatAsync, saveCat, loadLLMConfig, saveLLMConfig } from './storage'
+import { DEFAULT_LLM_CONFIG, setActiveLLMConfig, llmCall } from './llm'
 import { useSound } from './hooks/useSound'
 import PixelCat from './components/PixelCat'
 import './App.css'
 
 // ── LLM ──────────────────────────────────────────────────────────────
-const DEFAULT_LLM_CONFIG: LLMConfig = {
-  baseURL: 'http://10.26.236.214/v1',
-  apiKey: 'gpustack_fc146ee01da0ab5d_56093b1a3a30a431af7d4d799a44b99a',
-  model: 'qwen3-235b-a22b-instruct-2507-fp8',
-}
-
-// Mutable runtime config — updated when user saves settings
-let _llmConfig: LLMConfig = { ...DEFAULT_LLM_CONFIG }
-export function setActiveLLMConfig(cfg: LLMConfig) { _llmConfig = cfg }
 
 const WORK_MINUTES_PER_DAY = 480
 
@@ -52,23 +44,6 @@ const SYSTEM_GENERATE = `你是任务规划助手。根据任务标题，生成�
 - 使用简洁中文
 - 每步骤用「•」开头
 - 直接输出内容，不加前缀说明`
-
-async function llmCall(systemPrompt: string, userText: string, maxTokens = 512): Promise<string> {
-  const cfg = _llmConfig
-  const res = await fetch(`${cfg.baseURL}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({
-      model: cfg.model, seed: null, stop: null,
-      temperature: 0.7, top_p: 1, max_tokens: maxTokens,
-      frequency_penalty: 0, presence_penalty: 0,
-      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userText }],
-    }),
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const data = await res.json()
-  return data.choices?.[0]?.message?.content?.trim() ?? ''
-}
 
 async function polishWithAI(text: string): Promise<string> {
   const result = await llmCall(SYSTEM_POLISH, text)

@@ -30,7 +30,44 @@ export interface LLMConfig {
   baseURL: string   // e.g. "http://10.26.236.214/v1"
   apiKey: string
   model: string
+  oaAccount?: string   // OA login username, e.g. "fq393"
 }
 
 export const STORAGE_KEY = 'dailytask-todos'
 export const CAT_STORAGE_KEY = 'dailytask-cat-progress'
+
+// Ybz API types
+export interface YbzProject {
+  projectId: number
+  projectName: string
+  projectStatus: string
+  dailyCategoryId: number
+  workingType: string[]
+}
+
+export interface YbzWork {
+  workId?: number
+  workingHours: number
+  workingContent: string
+  workingType: string
+}
+
+// Weekly report internal state
+export interface WeekWorkEntry {
+  id: string               // local React key (crypto.randomUUID())
+  projectId: number | null
+  projectName: string
+  workingType: string
+  workingHours: number
+  workingContent: string
+}
+
+export interface WeekDayPreview {
+  date: string             // YYYY-MM-DD
+  weekdayLabel: string     // '周一' … '周五'
+  works: WeekWorkEntry[]
+  existingDailyMap: Record<number, number>  // projectId → existing dailyId
+}
+
+export const WORKING_TYPES = ['设计','开发','部署','联调','测试','推广','运维','其他'] as const
+export type WorkingType = typeof WORKING_TYPES[number]
