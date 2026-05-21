@@ -2,6 +2,8 @@ import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
+import os from 'os'
+import Database from 'better-sqlite3'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -239,6 +241,127 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   tray?.destroy()
   tray = null
+})
+
+// ── Browser History ──────────────────────────────────────────────────
+
+interface HistoryRow { url: string; title: string; visit_time_ms: number }
+
+// Chromium-based browsers store History at Default/History inside their app support dir.
+// We probe all known locations; all that exist are read.
+const CHROMIUM_PROFILE_CANDIDATES = [
+  // Google Chrome (stable / beta / dev / canary)
+  'Google/Chrome/Default',
+  'Google/Chrome Beta/Default',
+  'Google/Chrome Dev/Default',
+  'Google/Chrome Canary/Default',
+  // Microsoft Edge
+  'Microsoft Edge/Default',
+  'Microsoft Edge Beta/Default',
+  'Microsoft Edge Dev/Default',
+  'Microsoft Edge Canary/Default',
+  // Brave
+  'BraveSoftware/Brave-Browser/Default',
+  'BraveSoftware/Brave-Browser-Beta/Default',
+  'BraveSoftware/Brave-Browser-Nightly/Default',
+  // Arc (The Browser Company)
+  'Arc/User Data/Default',
+  // Vivaldi
+  'Vivaldi/Default',
+  // Opera
+  'com.operasoftware.Opera/Default',
+  // Chromium
+  'Chromium/Default',
+]
+
+function findChromiumHistoryPaths(): string[] {
+  const base = path.join(os.homedir(), 'Library/Application Support')
+  return CHROMIUM_PROFILE_CANDIDATES
+    .map(p => path.join(base, p, 'History'))
+    .filter(p => fs.existsSync(p))
+}
+
+function readChromiumHistory(dbPath: string, startMs: number, endMs: number, tmp: string): HistoryRow[] {
+  fs.copyFileSync(dbPath, tmp)
+  const db = new Database(tmp, { readonly: true, fileMustExist: true })
+  // Chrome timestamps: microseconds since 1601-01-01
+  const chromeEpochOffsetMs = 11644473600000
+  const toChrome = (ms: number) => (ms + chromeEpochOffsetMs) * 1000
+  const rows = db.prepare(`
+    SELECT u.url, u.title, v.visit_time
+    FROM urls u JOIN visits v ON u.id = v.url
+    WHERE v.visit_time >= ? AND v.visit_time < ?
+    ORDER BY v.visit_time ASC
+  `).all(toChrome(startMs), toChrome(endMs)) as { url: string; title: string; visit_time: number }[]
+  db.close()
+  return rows.map(r => ({
+    url: r.url,
+    title: r.title,
+    visit_time_ms: Math.round(r.visit_time / 1000) - chromeEpochOffsetMs,
+  }))
+}
+
+function readAllChromiumHistory(startMs: number, endMs: number): HistoryRow[] {
+  const paths = findChromiumHistoryPaths()
+  const all: HistoryRow[] = []
+  for (const dbPath of paths) {
+    const tmp = path.join(app.getPath('temp'), `chromium-history-${Date.now()}-${Math.random().toString(36).slice(2)}.db`)
+    try {
+      all.push(...readChromiumHistory(dbPath, startMs, endMs, tmp))
+    } catch (e) {
+      console.error(`Chromium history read failed (${dbPath}):`, e)
+    } finally {
+      try { fs.unlinkSync(tmp) } catch {}
+    }
+  }
+  return all
+}
+
+function readSafariHistory(startMs: number, endMs: number): HistoryRow[] {
+  const src = path.join(os.homedir(), 'Library/Safari/History.db')
+  if (!fs.existsSync(src)) return []
+
+  const tmp = path.join(app.getPath('temp'), `safari-history-${Date.now()}.db`)
+  try {
+    fs.copyFileSync(src, tmp)
+    // Also copy WAL/SHM files if they exist (Safari may use WAL mode)
+    for (const ext of ['-wal', '-shm']) {
+      const extra = src + ext
+      if (fs.existsSync(extra)) fs.copyFileSync(extra, tmp + ext)
+    }
+    const db = new Database(tmp, { readonly: true, fileMustExist: true })
+    // Safari timestamps: seconds since 2001-01-01 (Core Data epoch)
+    const safariEpochOffsetMs = 978307200000
+    const toSafari = (ms: number) => (ms - safariEpochOffsetMs) / 1000
+    const rows = db.prepare(`
+      SELECT hi.url, hv.title, hv.visit_time
+      FROM history_visits hv
+      JOIN history_items hi ON hv.history_item = hi.id
+      WHERE hv.visit_time >= ? AND hv.visit_time < ?
+      ORDER BY hv.visit_time ASC
+    `).all(toSafari(startMs), toSafari(endMs)) as { url: string; title: string; visit_time: number }[]
+    db.close()
+    return rows.map(r => ({
+      url: r.url,
+      title: r.title ?? '',
+      visit_time_ms: r.visit_time * 1000 + safariEpochOffsetMs,
+    }))
+  } catch (e) {
+    console.error('Safari history read failed:', e)
+    return []
+  } finally {
+    try { fs.unlinkSync(tmp) } catch {}
+    try { fs.unlinkSync(tmp + '-wal') } catch {}
+    try { fs.unlinkSync(tmp + '-shm') } catch {}
+  }
+}
+
+ipcMain.handle('browser-history:read', (_e, startMs: number, endMs: number) => {
+  const chromium = readAllChromiumHistory(startMs, endMs)
+  const safari = readSafariHistory(startMs, endMs)
+  const all = [...chromium, ...safari]
+  all.sort((a, b) => a.visit_time_ms - b.visit_time_ms)
+  return all
 })
 
 ipcMain.on('app-quit', () => {
