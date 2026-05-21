@@ -71,3 +71,21 @@ export interface WeekDayPreview {
   works: WeekWorkEntry[]
   existingDailyMap: Record<number, number>  // projectId → existing dailyId
 }
+
+// Browser history
+export interface BrowserHistoryEntry {
+  url: string
+  title: string
+  visit_time_ms: number
+}
+
+export interface BrowserHistoryDomain {
+  domain: string
+  count: number
+  titles: string[]  // up to 3 distinct titles
+}
+
+export interface BrowserHistoryDay {
+  date: string  // YYYY-MM-DD
+  domains: BrowserHistoryDomain[]
+}
