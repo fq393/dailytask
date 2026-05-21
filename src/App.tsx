@@ -436,8 +436,6 @@ function App() {
     return true
   })
 
-  const activeCount = viewTasks.filter(t => !t.completed).length
-  const completedCount = viewTasks.filter(t => t.completed).length
 
   const formatDate = (d: string | null) => {
     if (!d) return ''
