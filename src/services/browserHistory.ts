@@ -42,7 +42,8 @@ export async function fetchBrowserHistoryForWeek(
     const domain = extractDomain(entry.url)
     if (!domain || EXCLUDE_DOMAINS.has(domain)) continue
 
-    const dateStr = new Date(entry.visit_time_ms).toISOString().split('T')[0]
+    const d2 = new Date(entry.visit_time_ms)
+    const dateStr = `${d2.getFullYear()}-${String(d2.getMonth() + 1).padStart(2, '0')}-${String(d2.getDate()).padStart(2, '0')}`
     if (!byDate.has(dateStr)) byDate.set(dateStr, new Map())
     const domainMap = byDate.get(dateStr)!
     if (!domainMap.has(domain)) domainMap.set(domain, { count: 0, titles: new Set() })

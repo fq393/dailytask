@@ -322,7 +322,7 @@ export default function WeeklyReport({
   }
 
   const handleImportWeek = (text: string) => {
-    setInputText(text)
+    setInputText(prev => prev ? prev + '\n\n' + text : text)
   }
 
   const handleImportDay = (_date: string, text: string) => {
