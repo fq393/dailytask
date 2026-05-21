@@ -4,6 +4,7 @@ import { loadTasks, loadTasksAsync, saveTasks, loadCat, loadCatAsync, saveCat, l
 import { DEFAULT_LLM_CONFIG, setActiveLLMConfig, llmCall } from './llm'
 import { useSound } from './hooks/useSound'
 import PixelCat from './components/PixelCat'
+import TabBar, { type TabId } from './components/TabBar'
 import './App.css'
 
 const SYSTEM_POLISH = `你是一个专业的任务管理助手。用户会提供一个任务的描述内容，请将其优化成结构清晰、有执行力的任务说明。
@@ -179,7 +180,7 @@ function App() {
   const [estimatingIds, setEstimatingIds] = useState<Set<string>>(new Set())
   const [generatingContentIds, setGeneratingContentIds] = useState<Set<string>>(new Set())
   const [exportTip, setExportTip] = useState(false)
-  const [page, setPage] = useState<'tasks' | 'history'>('tasks')
+  const [tab, setTab] = useState<TabId>('tasks')
   const { playSound } = useSound()
   const [now, setNow] = useState(new Date())
   const [showSettings, setShowSettings] = useState(false)
@@ -457,8 +458,21 @@ function App() {
     return (Date.now() - task.startedAt) / 60000
   }
 
+  // ── Weekly page ───────────────────────────────────────────────────
+  if (tab === 'weekly') {
+    return (
+      <div className={`app ${darkMode ? 'dark' : ''}`}>
+        <div className="titlebar" />
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+          周报（开发中）
+        </div>
+        <TabBar active={tab} onChange={setTab} />
+      </div>
+    )
+  }
+
   // ── History page ──────────────────────────────────────────────────
-  if (page === 'history') {
+  if (tab === 'history') {
     const todayStr = new Date().toISOString().split('T')[0]
     // All tasks from before today (completed + incomplete), grouped by dueDate
     const tasksByDate = tasks
@@ -497,7 +511,7 @@ function App() {
         <div className="titlebar" />
         <header className="header">
           <div className="header-main">
-            <button className="back-btn" onClick={() => setPage('tasks')} aria-label="返回">
+            <button className="back-btn" onClick={() => setTab('tasks')} aria-label="返回">
               <ArrowLeftIcon />
             </button>
             <span className="header-title">历史记录</span>
@@ -554,6 +568,7 @@ function App() {
             })
           )}
         </div>
+        <TabBar active={tab} onChange={setTab} />
       </div>
     )
   }
@@ -566,7 +581,7 @@ function App() {
 
       <header className="header">
         <div className="header-main">
-          <button className="cat-btn" onClick={() => setPage('history')} aria-label="查看历史记录">
+          <button className="cat-btn" onClick={() => setTab('history')} aria-label="查看历史记录">
             <PixelCat progress={catProgress} overloadRatio={dailyLoad.ratio} />
           </button>
           <div className="header-date">
@@ -575,6 +590,9 @@ function App() {
             <span className="header-clock">{clockStr}</span>
           </div>
           <div className="header-actions">
+            <button className="export-btn icon-btn" onClick={handleExport} aria-label="导出" title={exportTip ? '已复制' : '导出任务'}>
+              <ClipboardIcon />
+            </button>
             <button className="settings-btn" onClick={() => { setSettingsDraft({ ...llmConfig }); setShowSettings(true) }} aria-label="打开设置">
               <SettingsIcon />
             </button>
@@ -822,12 +840,7 @@ function App() {
         )}
       </div>
 
-      <div className="footer">
-        <span className="footer-stats">{activeCount} 待完成 · {completedCount} 已完成</span>
-        <button className="export-btn" onClick={handleExport} aria-label="导出任务列表">
-          {exportTip ? <><ClipboardIcon /> 已复制</> : <><ClipboardIcon /> 导出</>}
-        </button>
-      </div>
+      <TabBar active={tab} onChange={setTab} />
 
       {/* Settings Drawer */}
       {showSettings && (

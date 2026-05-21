@@ -1019,3 +1019,29 @@ body.mac .drawer-header { padding-top: 48px; }
   .settings-drawer { transition: none; }
   .drawer-backdrop { animation: none; }
 }
+
+/* ── TabBar ──────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  height: 52px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.tab-bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 10px;
+  padding: 6px 0;
+  transition: color 0.15s;
+}
+.tab-bar-item.active { color: var(--accent); }
+.tab-bar-item:hover:not(.active) { color: var(--text); }
