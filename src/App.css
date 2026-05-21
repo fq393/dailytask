@@ -1071,10 +1071,70 @@ body.mac .drawer-header { padding-top: 48px; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 6px 16px;
+  gap: 10px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+}
+.week-nav-arrow {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary, rgba(0,0,0,0.04));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.week-nav-arrow:hover { background: var(--hover); border-color: var(--accent); }
+.week-nav-arrow:disabled { opacity: 0.3; cursor: default; }
+.week-nav-arrow:disabled:hover { background: var(--bg-secondary, rgba(0,0,0,0.04)); border-color: var(--border); }
+.week-nav-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 6px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary, rgba(0,0,0,0.02));
+  min-width: 160px;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.week-nav-center:hover { border-color: var(--accent); background: var(--hover); }
+.week-nav-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.week-nav-num { font-size: 14px; font-weight: 700; color: var(--text); }
+.week-nav-year { font-size: 12px; color: var(--text-muted); }
+.week-nav-badge {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.08);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.week-nav-badge--current {
+  background: var(--accent);
+  color: #fff;
+}
+.dark .week-nav-badge { background: rgba(255,255,255,0.12); }
+.dark .week-nav-badge--current { background: var(--accent); color: #fff; }
+.week-nav-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
 }
 .week-label {
   font-size: 12px;

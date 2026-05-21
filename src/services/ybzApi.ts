@@ -101,3 +101,18 @@ export async function addOrEditDaily(payload: {
   if (data.code !== 200) throw new Error(data.msg)
   return data.data.dailyId
 }
+
+export async function removeDaily(dailyId: number): Promise<void> {
+  const res = await fetch(`${YBZ_BASE}/cpjf/daily/remove`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ dailyId }),
+    signal: AbortSignal.timeout(10000),
+  })
+  if (!res.ok) {
+    if (res.status === 401) clearJwt()
+    throw new Error(`删除日报失败 (${res.status})`)
+  }
+  const data = await res.json()
+  if (data.code !== 200) throw new Error(data.msg)
+}

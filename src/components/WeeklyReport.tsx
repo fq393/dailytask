@@ -5,7 +5,7 @@ import { WORKING_TYPES } from '../types'
 import TabBar, { type TabId } from './TabBar'
 import PixelCat from './PixelCat'
 import { llmCall } from '../llm'
-import { authenticate, getProjects, getDailyList, isAuthenticated, addOrEditDaily } from '../services/ybzApi'
+import { authenticate, getProjects, getDailyList, isAuthenticated, addOrEditDaily, removeDaily } from '../services/ybzApi'
 
 // ── Icons ────────────────────────────────────────────────────────────
 const SettingsIcon = () => (
@@ -53,7 +53,15 @@ function formatWeekHeader(dates: string[]): string {
     const dt = new Date(d + 'T00:00:00')
     return `${dt.getMonth() + 1}/${String(dt.getDate()).padStart(2, '0')}`
   }
-  return `${fmt(dates[0])}（一）~ ${fmt(dates[4])}（五）`
+  return `${fmt(dates[0])} — ${fmt(dates[4])}`
+}
+
+function getISOWeekNumber(dateStr: string): number {
+  const d = new Date(dateStr + 'T00:00:00')
+  const jan4 = new Date(d.getFullYear(), 0, 4)
+  const start = new Date(jan4)
+  start.setDate(jan4.getDate() - ((jan4.getDay() || 7) - 1))
+  return Math.floor((d.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
 }
 
 // Compute week offset from a picked Monday date string (YYYY-MM-DD)
@@ -130,6 +138,9 @@ export default function WeeklyReport({
   const dates = getWeekDates(weekOffset)
   const weekHeader = formatWeekHeader(dates)
   const currentWeekMonday = getWeekDates(0)[0]
+  const weekNum = getISOWeekNumber(dates[0])
+  const weekYear = new Date(dates[0] + 'T00:00:00').getFullYear()
+  const weekBadge = weekOffset === 0 ? '本周' : weekOffset === -1 ? '上周' : `${-weekOffset}周前`
 
   const [isPolishing, setIsPolishing] = useState(false)
   const [isAllocating, setIsAllocating] = useState(false)
@@ -313,19 +324,41 @@ export default function WeeklyReport({
     let failed = 0
 
     for (const day of preview) {
-      if (day.works.length === 0) continue
-
+      // Build projectId → remaining works map
       const grouped = new Map<number, typeof day.works>()
       for (const work of day.works) {
         if (work.projectId == null) continue
         grouped.set(work.projectId, [...(grouped.get(work.projectId) ?? []), work])
       }
 
+      // For existing daily records: delete first, then re-add if works remain
+      for (const [projectIdStr, existingDailyId] of Object.entries(day.existingDailyMap)) {
+        const projectId = Number(projectIdStr)
+        const remainingWorks = grouped.get(projectId) ?? []
+        try {
+          await removeDaily(existingDailyId)
+          if (remainingWorks.length > 0) {
+            await addOrEditDaily({
+              projectId,
+              reportDate: day.date,
+              works: remainingWorks.map(w => ({
+                workingHours: w.workingHours,
+                workingContent: w.workingContent,
+                workingType: w.workingType,
+              })),
+            })
+          }
+          success++
+        } catch {
+          failed++
+        }
+        grouped.delete(projectId)
+      }
+
+      // New records (not previously on server): just add
       for (const [projectId, works] of grouped) {
         try {
-          const existingDailyId = day.existingDailyMap[projectId]
           await addOrEditDaily({
-            ...(existingDailyId !== undefined ? { dailyId: existingDailyId } : {}),
             projectId,
             reportDate: day.date,
             works: works.map(w => ({
@@ -376,14 +409,25 @@ export default function WeeklyReport({
 
       {/* Week navigation sub-row */}
       <div className="week-nav-row">
-        <button className="week-nav-btn" onClick={() => { setPreview(null); setWeekOffset(o => o - 1) }} aria-label="上一周">‹</button>
-        <span
-          className="week-label week-label--clickable"
+        <button
+          className="week-nav-arrow"
+          onClick={() => { setPreview(null); setWeekOffset(o => o - 1) }}
+          aria-label="上一周"
+        >‹</button>
+        <div
+          className="week-nav-center"
           onClick={() => weekDateInputRef.current?.showPicker()}
           title="点击选择周"
         >
-          {weekHeader}
-        </span>
+          <div className="week-nav-main">
+            <span className="week-nav-num">第 {weekNum} 周</span>
+            <span className="week-nav-year">{weekYear}</span>
+            <span className={`week-nav-badge ${weekOffset === 0 ? 'week-nav-badge--current' : ''}`}>
+              {weekBadge}
+            </span>
+          </div>
+          <div className="week-nav-sub">{weekHeader}</div>
+        </div>
         <input
           ref={weekDateInputRef}
           type="date"
@@ -399,7 +443,7 @@ export default function WeeklyReport({
           aria-label="选择周"
         />
         <button
-          className="week-nav-btn"
+          className="week-nav-arrow"
           onClick={() => { setPreview(null); setWeekOffset(o => Math.min(o + 1, 0)) }}
           aria-label="下一周"
           disabled={weekOffset >= 0}
