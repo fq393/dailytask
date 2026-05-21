@@ -6,6 +6,7 @@ import TabBar, { type TabId } from './TabBar'
 import PixelCat from './PixelCat'
 import { llmCall } from '../llm'
 import { authenticate, getProjects, getDailyList, isAuthenticated, addOrEditDaily, removeDaily } from '../services/ybzApi'
+import BrowserHistoryDrawer from './BrowserHistoryDrawer'
 
 // ── Icons ────────────────────────────────────────────────────────────
 const SettingsIcon = () => (
@@ -143,6 +144,7 @@ export default function WeeklyReport({
   const weekBadge = weekOffset === 0 ? '本周' : weekOffset === -1 ? '上周' : `${-weekOffset}周前`
 
   const [isPolishing, setIsPolishing] = useState(false)
+  const [showBrowserHistory, setShowBrowserHistory] = useState(false)
   const [isAllocating, setIsAllocating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [projects, setProjects] = useState<YbzProject[]>([])
@@ -317,6 +319,14 @@ export default function WeeklyReport({
     } finally {
       setIsAllocating(false)
     }
+  }
+
+  const handleImportWeek = (text: string) => {
+    setInputText(text)
+  }
+
+  const handleImportDay = (_date: string, text: string) => {
+    setInputText(prev => prev ? prev + '\n\n' + text : text)
   }
 
   const updateWork = (date: string, workId: string, field: string, value: string | number | null) => {
@@ -513,6 +523,13 @@ export default function WeeklyReport({
           />
           <div className="weekly-input-actions">
             <button
+              className="bh-open-btn"
+              onClick={() => setShowBrowserHistory(true)}
+              title="从浏览器历史导入工作内容"
+            >
+              📋 浏览历史
+            </button>
+            <button
               className={`polish-btn ${isPolishing ? 'loading' : ''}`}
               onClick={handlePolish}
               disabled={isPolishing || !inputText.trim()}
@@ -648,6 +665,13 @@ export default function WeeklyReport({
         )}
       </div>
 
+      <BrowserHistoryDrawer
+        isOpen={showBrowserHistory}
+        onClose={() => setShowBrowserHistory(false)}
+        weekDates={dates}
+        onImportWeek={handleImportWeek}
+        onImportDay={handleImportDay}
+      />
       <TabBar active={activeTab} onChange={onTabChange} />
     </div>
   )
