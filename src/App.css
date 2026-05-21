@@ -1410,6 +1410,23 @@ body.mac .drawer-header { padding-top: 48px; }
   transition: opacity 0.15s;
 }
 .submit-all-btn:disabled { opacity: 0.5; cursor: default; }
+.refresh-preview-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.refresh-preview-btn:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+.refresh-preview-btn:disabled { opacity: 0.4; cursor: default; }
 .submit-result {
   text-align: center;
   font-size: 13px;

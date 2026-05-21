@@ -197,7 +197,7 @@ export default function WeeklyReport({
             existingDailyMap: dailyMapByDate[date] ?? {},
           }
         })
-        if (loaded.some(d => d.works.length > 0)) setPreview(loaded)
+        setPreview(loaded)
       } catch (err) {
         if (!cancelled) setAuthError(err instanceof Error ? err.message : '加载记录失败')
       } finally {
@@ -208,6 +208,45 @@ export default function WeeklyReport({
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOffset, oaAccount])
+
+  const handleRefreshPreview = async () => {
+    if (!oaAccount) { onOpenSettings(); return }
+    setIsLoading(true)
+    setAuthError(null)
+    try {
+      if (!isAuthenticated()) await authenticate(oaAccount)
+      const [fetchedProjects, existingDailies] = await Promise.all([
+        getProjects(),
+        getDailyList(dates[0], dates[4]),
+      ])
+      setProjects(fetchedProjects)
+      const dailyMapByDate: Record<string, Record<number, number>> = {}
+      for (const daily of existingDailies) {
+        if (!dailyMapByDate[daily.reportDate]) dailyMapByDate[daily.reportDate] = {}
+        dailyMapByDate[daily.reportDate][daily.projectId] = daily.dailyId
+      }
+      setPreview(dates.map(date => {
+        const dayDailies = existingDailies.filter(d => d.reportDate === date)
+        return {
+          date,
+          weekdayLabel: weekdayLabel(date),
+          works: dayDailies.flatMap(d => d.works.map(w => ({
+            id: crypto.randomUUID(),
+            projectId: d.projectId,
+            projectName: fetchedProjects.find(p => p.projectId === d.projectId)?.projectName ?? '',
+            workingType: w.workingType as import('../types').WorkingType,
+            workingHours: w.workingHours,
+            workingContent: w.workingContent,
+          }))),
+          existingDailyMap: dailyMapByDate[date] ?? {},
+        }
+      }))
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : '加载记录失败')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handlePolish = async () => {
     if (!inputText.trim() || isPolishing) return
@@ -591,6 +630,14 @@ export default function WeeklyReport({
                 title={!canSubmit ? '请先为所有条目选择项目' : ''}
               >
                 {isSubmitting ? '提交中…' : '提交全部'}
+              </button>
+              <button
+                className="refresh-preview-btn"
+                onClick={handleRefreshPreview}
+                disabled={isLoading || !oaAccount}
+                title={!oaAccount ? '请先在设置中填写 OA 账号' : ''}
+              >
+                {isLoading ? '加载中…' : '预览本周日报'}
               </button>
             </div>
           </div>

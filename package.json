@@ -19,7 +19,7 @@
     "version:patch": "npm version patch -m 'chore: bump version to %s'",
     "version:minor": "npm version minor -m 'chore: bump version to %s'",
     "version:major": "npm version major -m 'chore: bump version to %s'",
-    "electron:release": "npm run version:patch && npm run electron:build && git push --follow-tags"
+    "electron:release": "npm run version:patch && npm run electron:build && git push origin main && git push origin $(git describe --tags --abbrev=0)"
   },
   "build": {
     "appId": "com.dailytask.app",
