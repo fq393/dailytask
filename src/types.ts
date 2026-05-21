@@ -27,7 +27,7 @@ export interface CatProgress {
 
 // --- new ---
 export interface LLMConfig {
-  baseURL: string   // e.g. "http://10.26.236.214/v1"
+  baseURL: string   // e.g. "https://dashscope.aliyuncs.com/compatible-mode/v1"
   apiKey: string
   model: string
   oaAccount?: string   // OA login username, e.g. "fq393"
@@ -52,12 +52,15 @@ export interface YbzWork {
   workingType: string
 }
 
+export const WORKING_TYPES = ['设计','开发','部署','联调','测试','推广','运维','其他'] as const
+export type WorkingType = typeof WORKING_TYPES[number]
+
 // Weekly report internal state
 export interface WeekWorkEntry {
   id: string               // local React key (crypto.randomUUID())
   projectId: number | null
   projectName: string
-  workingType: string
+  workingType: WorkingType
   workingHours: number
   workingContent: string
 }
@@ -68,6 +71,3 @@ export interface WeekDayPreview {
   works: WeekWorkEntry[]
   existingDailyMap: Record<number, number>  // projectId → existing dailyId
 }
-
-export const WORKING_TYPES = ['设计','开发','部署','联调','测试','推广','运维','其他'] as const
-export type WorkingType = typeof WORKING_TYPES[number]

@@ -6,10 +6,6 @@ import { useSound } from './hooks/useSound'
 import PixelCat from './components/PixelCat'
 import './App.css'
 
-// ── LLM ──────────────────────────────────────────────────────────────
-
-const WORK_MINUTES_PER_DAY = 480
-
 const SYSTEM_POLISH = `你是一个专业的任务管理助手。用户会提供一个任务的描述内容，请将其优化成结构清晰、有执行力的任务说明。
 
 要求：
@@ -49,6 +45,8 @@ async function polishWithAI(text: string): Promise<string> {
   const result = await llmCall(SYSTEM_POLISH, text)
   return result || text
 }
+
+const WORK_MINUTES_PER_DAY = 480
 
 // ── SVG Icons ────────────────────────────────────────────────────────
 const SunIcon = () => (
