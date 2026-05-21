@@ -466,7 +466,7 @@ function App() {
         activeTab={tab}
         onTabChange={setTab}
         onOpenSettings={() => { setSettingsDraft({ ...llmConfig }); setShowSettings(true) }}
-        onToggleDark={() => setDarkMode(d => !d)}
+        onToggleDark={() => setDarkMode((d: boolean) => !d)}
       />
     )
   }
