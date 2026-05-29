@@ -5,11 +5,13 @@ const OA_BASE = 'http://10.20.21.75'
 const YBZ_BASE = 'http://10.20.23.127/ybz/api'
 
 let _jwt: string | null = null
+let _oaAccount: string | null = null
 
 export function isAuthenticated(): boolean { return _jwt !== null }
 export function clearJwt(): void { _jwt = null }
 
 export async function authenticate(oaAccount: string): Promise<void> {
+  _oaAccount = oaAccount
   const oaRes = await fetch(
     `${OA_BASE}/oa/login?loginName=${encodeURIComponent(oaAccount)}`,
     { signal: AbortSignal.timeout(10000) }
@@ -42,17 +44,29 @@ function authHeaders(): Record<string, string> {
   return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_jwt}` }
 }
 
+async function reauthenticate(): Promise<void> {
+  if (!_oaAccount) throw new Error('未配置 OA 账号，请前往设置填写')
+  clearJwt()
+  await authenticate(_oaAccount)
+}
+
+async function withReauth(fn: () => Promise<Response>): Promise<Response> {
+  let res = await fn()
+  if (res.status === 401) {
+    await reauthenticate()
+    res = await fn()
+  }
+  return res
+}
+
 export async function getProjects(): Promise<YbzProject[]> {
-  const res = await fetch(`${YBZ_BASE}/cpjf/myProject/list`, {
+  const res = await withReauth(() => fetch(`${YBZ_BASE}/cpjf/myProject/list`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ projectName: '', page: 1, dailyCategoryId: null, projectStatus: '' }),
     signal: AbortSignal.timeout(10000),
-  })
-  if (!res.ok) {
-    if (res.status === 401) clearJwt()
-    throw new Error(`获取项目列表失败 (${res.status})`)
-  }
+  }))
+  if (!res.ok) throw new Error(`获取项目列表失败 (${res.status})`)
   const data = await res.json()
   if (data.code !== 200) throw new Error(data.msg)
   return data.list ?? []
@@ -66,16 +80,13 @@ export interface DailyRecord {
 }
 
 export async function getDailyList(startDate: string, endDate: string): Promise<DailyRecord[]> {
-  const res = await fetch(`${YBZ_BASE}/cpjf/daily/list`, {
+  const res = await withReauth(() => fetch(`${YBZ_BASE}/cpjf/daily/list`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ startDate, endDate, page: 1, pageSize: 100 }),
     signal: AbortSignal.timeout(10000),
-  })
-  if (!res.ok) {
-    if (res.status === 401) clearJwt()
-    throw new Error(`获取日报列表失败 (${res.status})`)
-  }
+  }))
+  if (!res.ok) throw new Error(`获取日报列表失败 (${res.status})`)
   const data = await res.json()
   if (data.code !== 200) throw new Error(data.msg)
   return data.list ?? []
@@ -87,32 +98,26 @@ export async function addOrEditDaily(payload: {
   reportDate: string
   works: Omit<YbzWork, 'workId'>[]
 }): Promise<number> {
-  const res = await fetch(`${YBZ_BASE}/cpjf/daily/addOrEdit`, {
+  const res = await withReauth(() => fetch(`${YBZ_BASE}/cpjf/daily/addOrEdit`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(10000),
-  })
-  if (!res.ok) {
-    if (res.status === 401) clearJwt()
-    throw new Error(`提交日报失败 (${res.status})`)
-  }
+  }))
+  if (!res.ok) throw new Error(`提交日报失败 (${res.status})`)
   const data = await res.json()
   if (data.code !== 200) throw new Error(data.msg)
   return data.data.dailyId
 }
 
 export async function removeDaily(dailyId: number): Promise<void> {
-  const res = await fetch(`${YBZ_BASE}/cpjf/daily/remove`, {
+  const res = await withReauth(() => fetch(`${YBZ_BASE}/cpjf/daily/remove`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ dailyId }),
     signal: AbortSignal.timeout(10000),
-  })
-  if (!res.ok) {
-    if (res.status === 401) clearJwt()
-    throw new Error(`删除日报失败 (${res.status})`)
-  }
+  }))
+  if (!res.ok) throw new Error(`删除日报失败 (${res.status})`)
   const data = await res.json()
   if (data.code !== 200) throw new Error(data.msg)
 }
